@@ -6,14 +6,43 @@ let geoLayer;
 
 let markerSeleccionado = null;
 
+// ======================================================
+// API key de MapTiler
+// ======================================================
+// Reemplaza este valor por tu propia key si cambia.
+// Consíguela en: https://cloud.maptiler.com/account/keys/
+// Recomendado: restringir la key por dominio desde el panel
+// de MapTiler (antito-yanac.github.io) una vez en producción.
+const MAPTILER_KEY = "j4zAW83dNrfEbSRUvYN0";
+
+// Estilo del mapa. Opciones disponibles:
+//   hybrid-v4    -> satelital + etiquetas (actual)
+//   satellite    -> solo satelital
+//   streets-v4   -> calles clásico
+//   topo-v4      -> topográfico
+//   basic-v4     -> minimalista
+//   dark-v4      -> oscuro
+//   pastel-v4    -> pastel
+const MAP_STYLE = "hybrid-v4";
+
 export function crearMapa(idDiv) {
 
     map = L.map(idDiv);
 
+    // --------------------------------------------------
+    // Capa base: MapTiler (raster tiles) reemplaza a
+    // OpenStreetMap. Leaflet se mantiene igual.
+    // --------------------------------------------------
     L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        `https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
         {
-            attribution: "© OpenStreetMap"
+            tileSize: 512,
+            zoomOffset: -1,
+            minZoom: 1,
+            attribution:
+                '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> ' +
+                '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+            crossOrigin: true
         }
     ).addTo(map);
 
