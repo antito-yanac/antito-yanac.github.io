@@ -1,4 +1,4 @@
-// firebase-messaging-sw.js
+    // firebase-messaging-sw.js
 //
 // Service Worker para Firebase Cloud Messaging.
 // Debe estar en la RAÍZ del sitio (mismo nivel que index.html) para que
