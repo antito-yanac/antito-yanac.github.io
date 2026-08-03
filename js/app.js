@@ -1,11 +1,13 @@
 //======================================================
-// Google Earth Search v1.4
+// Buscador Lugares Antamina 2026
 // Archivo principal
 //======================================================
 
 import { cargarLugares } from "./data.js";
 import { crearBuscador, teclado } from "./search.js";
-import { crearMapa } from "./map.js";import { inicializarFirebase, mostrarToast, reproducirSonido } from "./notifications.js";
+import { crearMapa } from "./map.js";
+import { inicializarFirebase } from "./notifications.js";
+import { escucharMensajesPush } from "./mensajes.js";
 
 //======================================================
 // Referencias HTML
@@ -39,7 +41,16 @@ async function iniciar() {
 
         mapa.cargarGeoJSON(lugares);
 
-        stats.textContent = `${lugares.length} lugares cargados`;        // Inicializar Firebase Cloud Messaging (push, popups y sonido)        // Se ejecuta sin bloquear la app; si falla, solo muestra un toast.        inicializarFirebase().catch(err => console.error("Firebase:", err));
+        stats.textContent = `${lugares.length} lugares cargados`;
+
+        // Escuchar mensajes push en tiempo real (Firestore).
+        // Todos los navegadores con la página abierta reciben el
+        // mensaje real que el admin envíe desde admin.html.
+        escucharMensajesPush();
+
+        // Habilitar Firebase Messaging de forma silenciosa (permiso +
+        // Service Worker + token). No muestra toasts de estado.
+        inicializarFirebase().catch(err => console.warn("Firebase:", err.message));
 
     } catch (error) {
 
