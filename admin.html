@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔔 Panel de Administración — Mensajes Antamina</title>
+<link rel="stylesheet" href="notifications.css">
+<link rel="stylesheet" href="css/admin.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+
+<div class="admin-container">
+
+    <!-- Encabezado -->
+    <div class="admin-header">
+        <h1><span class="icon">🔔</span> Panel de Mensajes</h1>
+        <p>Envía notificaciones push a los dispositivos registrados</p>
+    </div>
+
+    <!-- Campos del formulario -->
+    <form id="form-mensaje" autocomplete="off">
+
+        <!-- Título del mensaje -->
+        <div class="form-group">
+            <label for="titulo">📋 Título</label>
+            <input
+                type="text"
+                id="titulo"
+                name="titulo"
+                placeholder="Escribe el título del mensaje..."
+                maxlength="100"
+                required>
+        </div>
+
+        <!-- Cuerpo del mensaje -->
+        <div class="form-group">
+            <label for="cuerpo">💬 Mensaje</label>
+            <textarea
+                id="cuerpo"
+                name="cuerpo"
+                placeholder="Escribe el contenido del mensaje..."
+                maxlength="500"
+                required></textarea>
+            <div class="char-counter" id="char-counter">0 / 500</div>
+        </div>
+
+        <!-- Botones: Enviar (aceptar) y Cancelar -->
+        <div class="button-group">
+            <button type="submit" class="btn btn-enviar" id="btn-enviar">
+                ✅ Enviar
+            </button>
+            <button type="button" class="btn btn-cancelar" id="btn-cancelar">
+                ✖️ Cancelar
+            </button>
+        </div>
+
+    </form>
+
+    <!-- Barra de estado -->
+    <div class="status-bar" id="status-bar"></div>
+
+</div>
+
+<!-- ============================================
+     Modal de confirmación (Aceptar / Cancelar)
+     ============================================ -->
+<div class="modal-overlay" id="modal-confirm">
+    <div class="modal-box">
+        <div class="modal-icon">❓</div>
+        <h3 id="modal-titulo">¿Confirmar?</h3>
+        <p id="modal-mensaje">¿Estás seguro?</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-cancelar" id="modal-btn-cancelar">
+                ✖️ Cancelar
+            </button>
+            <button type="button" class="btn btn-enviar" id="modal-btn-aceptar">
+                ✅ Aceptar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
