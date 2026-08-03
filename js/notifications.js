@@ -113,7 +113,7 @@ export function mostrarToast(titulo, mensaje, tipo = "info", conSonido = false) 
     }
 
     const toast = document.createElement("div");
-    toast.className = `toast toast-${tipo}`;
+    toast.className = toast toast-${tipo};
 
     const iconos = {
         info: "ℹ️",
@@ -160,8 +160,38 @@ function cerrarToast(toast) {
 // ======================================================
 
 /**
+ * Registra el Service Worker (firebase-messaging-sw.js) en la raíz del sitio.
+ * Es OBLIGATORIO para que FCM pueda entregar notificaciones push y obtener
+ * el token del dispositivo. Sin esto, getToken() falla y muestra el error rojo.
+ *
+ * @returns {Promise<ServiceWorkerRegistration|null>}
+ */
+async function registrarServiceWorker() {
+    try {
+        if (!("serviceWorker" in navigator)) {
+            console.warn("Este navegador no soporta Service Workers.");
+            return null;
+        }
+
+        // El Service Worker debe estar en la raíz del sitio.
+        // scope "./" le da alcance sobre todo el dominio.
+        const registration = await navigator.serviceWorker.register(
+            "./firebase-messaging-sw.js",
+            { scope: "./" }
+        );
+
+        console.log("Service Worker registrado:", registration.scope);
+        return registration;
+    } catch (error) {
+        console.error("Error registrando Service Worker:", error);
+        return null;
+    }
+}
+
+/**
  * Inicializa Firebase y configura FCM.
- * Solicita permiso de notificaciones y obtiene el token del dispositivo.
+ * Registra el Service Worker, solicita permiso de notificaciones
+ * y obtiene el token del dispositivo.
  * @returns {Promise<string|null>} token FCM o null si falla
  */
 export async function inicializarFirebase() {
@@ -194,8 +224,22 @@ export async function inicializarFirebase() {
             }
         });
 
-        // Solicitar permiso y obtener token
-        const token = await solicitarPermisoYToken();
+        // PASO 1: Registrar el Service Worker ANTES de solicitar el token.
+        // Sin Service Worker, getToken() falla con el error rojo.
+        const swRegistration = await registrarServiceWorker();
+
+        if (!swRegistration) {
+            mostrarToast(
+                "Service Worker",
+                "No se pudo registrar firebase-messaging-sw.js. Verifica que esté en la raíz del sitio.",
+                "alerta",
+                false
+            );
+            return null;
+        }
+
+        // PASO 2: Solicitar permiso y obtener token pasando el SW registration.
+        const token = await solicitarPermisoYToken(swRegistration);
         return token;
 
     } catch (error) {
@@ -212,8 +256,9 @@ export async function inicializarFirebase() {
 
 /**
  * Solicita permiso de notificaciones al usuario y obtiene el token FCM.
+ * @param {ServiceWorkerRegistration} swRegistration - registro del SW
  */
-async function solicitarPermisoYToken() {
+async function solicitarPermisoYToken(swRegistration) {
     try {
         // Verificar soporte del navegador
         if (!("Notification" in window)) {
@@ -221,23 +266,40 @@ async function solicitarPermisoYToken() {
             return null;
         }
 
-        // Solicitar permiso
-        const permiso = await Notification.requestPermission();
-
-        if (permiso !== "granted") {
-            console.info("Permiso de notificaciones denegado por el usuario.");
+        // Si el permiso ya fue denegado previamente, no se puede volver a pedir.
+        // Mostrar instrucciones claras de cómo reactivarlo.
+        if (Notification.permission === "denied") {
+            console.info("Permiso de notificaciones bloqueado por el usuario.");
             mostrarToast(
-                "Notificaciones",
-                "Permiso denegado. Actívalo para recibir alertas push.",
-                "info",
+                "Notificaciones bloqueadas",
+                "Activar: clic en el ícono 🔒 de la barra de direcciones → Permitir notificaciones.",
+                "alerta",
                 false
             );
             return null;
         }
 
-        // Obtener token FCM
+        // Solicitar permiso (solo si está en "default")
+        if (Notification.permission === "default") {
+            const permiso = await Notification.requestPermission();
+
+            if (permiso !== "granted") {
+                console.info("Permiso de notificaciones no concedido:", permiso);
+                mostrarToast(
+                    "Notificaciones",
+                    "Permiso no concedido. Actívalo desde el ícono 🔒 de la barra de direcciones.",
+                    "info",
+                    false
+                );
+                return null;
+            }
+        }
+
+        // Obtener token FCM pasando el Service Worker registration.
+        // Esto es CRÍTICO: sin serviceWorkerRegistration, getToken() falla.
         currentToken = await getToken(messaging, {
-            vapidKey: vapidKey
+            vapidKey: vapidKey,
+            serviceWorkerRegistration: swRegistration
         });
 
         if (currentToken) {
@@ -258,18 +320,44 @@ async function solicitarPermisoYToken() {
             }
         } else {
             console.warn("No se obtuvo token FCM.");
+            mostrarToast(
+                "FCM",
+                "No se generó token. Revisa la configuración en Firebase Console.",
+                "info",
+                false
+            );
         }
 
         return currentToken;
 
     } catch (error) {
         console.error("Error solicitando permiso/token FCM:", error);
-        mostrarToast(
-            "Error FCM",
-            "Verifica el appId web en js/firebase-config.js y el Service Worker (firebase-messaging-sw.js)",
-            "alerta",
-            false
-        );
+
+        // Mensaje de error más específico según el tipo de error
+        let mensaje = "Error desconocido.";
+
+        if (error && error.code) {
+            switch (error.code) {
+                case "messaging/permission-blocked":
+                    mensaje = "Notificaciones bloqueadas. Actívalas desde el ícono 🔒 de la barra de direcciones.";
+                    break;
+                case "messaging/unsupported-browser":
+                    mensaje = "Este navegador no soporta FCM. Usa Chrome, Firefox o Edge.";
+                    break;
+                case "messaging/notifications-blocked":
+                    mensaje = "Notificaciones bloqueadas por el navegador. Revisa los permisos del sitio.";
+                    break;
+                case "messaging/failed-service-worker-registration":
+                    mensaje = "No se registró el Service Worker. Verifica firebase-messaging-sw.js en la raíz del sitio.";
+                    break;
+                default:
+                    mensaje = Error FCM: ${error.code}. Revisa la consola (F12).;
+            }
+        } else if (error && error.message) {
+            mensaje = Error: ${error.message};
+        }
+
+        mostrarToast("Error FCM", mensaje, "alerta", false);
         return null;
     }
 }
