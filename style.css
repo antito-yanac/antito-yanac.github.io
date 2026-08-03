@@ -1,255 +1,234 @@
-:root{
-
---bg-default:#2c3e50;
-
---google-blue:#4285f4;
-
+:root {
+    --bg-default: #2c3e50;
+    --google-blue: #4285f4;
 }
 
-body{
-
-margin:0;
-
-padding:30px;
-
-background:var(--bg-default);
-
-transition:background-color .4s ease;
-
-font-family:Arial,Helvetica,sans-serif;
-
-color:white;
-
-display:flex;
-
-justify-content:center;
-
+body {
+    margin: 0;
+    padding: 30px;
+    background: var(--bg-default);
+    transition: background-color .4s ease;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
 }
 
-.container{
-
-width:90%;
-
-max-width:900px;
-
-background:rgba(0,0,0,.20);
-
-padding:20px;
-
-border-radius:15px;
-
-backdrop-filter:blur(6px);
-
-box-shadow:0 10px 30px rgba(0,0,0,.35);
-
+.container {
+    width: 90%;
+    max-width: 900px;
+    background: rgba(0, 0, 0, .20);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
 }
 
-h1{
-
-text-align:center;
-
-font-size:42px;
-
-margin-bottom:20px;
-
+h1 {
+    text-align: center;
+    font-size: 42px;
+    margin-bottom: 20px;
 }
 
-#search{
-
-width:100%;
-
-padding:18px;
-
-font-size:22px;
-
-border-radius:50px;
-
-border:none;
-
-outline:none;
-
-box-sizing:border-box;
-
-text-align:center;
-
+#search {
+    width: 100%;
+    padding: 18px;
+    font-size: 22px;
+    border-radius: 50px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    text-align: center;
 }
 
-#search:focus{
-
-box-shadow:0 0 15px white;
-
+#search:focus {
+    box-shadow: 0 0 15px white;
 }
 
-#stats{
-
-margin-top:15px;
-
-text-align:center;
-
-font-size:15px;
-
-color:#ddd;
-
+#stats {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 15px;
+    color: #ddd;
 }
 
-#results{
-
-margin-top:20px;
-
-max-height:300px;
-
-overflow-y:auto;
-
+#results {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-.result{
-
-padding:15px;
-
-margin-bottom:10px;
-
-background:rgba(255,255,255,.08);
-
-border-radius:10px;
-
-cursor:pointer;
-
-transition:.2s;
-
+.result {
+    padding: 15px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, .08);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: .2s;
 }
 
-.result:hover{
-
-background:rgba(255,255,255,.18);
-
+.result:hover {
+    background: rgba(255, 255, 255, .18);
 }
 
-.result h3{
-
-margin:0;
-
+.result h3 {
+    margin: 0;
 }
 
-.result p{
-
-margin:4px 0;
-
-font-size:14px;
-
+.result p {
+    margin: 4px 0;
+    font-size: 14px;
 }
 
-/* MAPA */
-
-#map{
-
-margin-top:25px;
-
-height:450px;
-
-border-radius:15px;
-
-overflow:hidden;
-
-border:2px solid rgba(255,255,255,.15);
-
+/* ==================================================
+   MAPA
+================================================== */
+#map-container {
+    position: relative;
+    margin-top: 25px;
 }
 
-/* Scroll */
-
-#results::-webkit-scrollbar{
-
-width:8px;
-
+#map {
+    height: 450px;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, .15);
 }
 
-#results::-webkit-scrollbar-thumb{
-
-background:#888;
-
-border-radius:8px;
-
-}
-.selected{
-
-background:#4285f4 !important;
-
-color:white;
-
-border-left:5px solid yellow;
-
-}
-
-mark{
-
-background:gold;
-
-padding:2px;
-
-border-radius:4px;
-
-}
-/*==================================================
-PANEL DE INFORMACIÓN
-==================================================*/
-
-#info-panel{
-
-margin-top:25px;
-
-padding:20px;
-
-background:rgba(255,255,255,.08);
-
-border-radius:15px;
-
+/* ==================================================
+   BOTÓN DE UBICACIÓN (estilo Google Maps)
+================================================== */
+#btn-ubicacion {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: box-shadow .2s, transform .15s;
 }
 
-#info-panel h2{
-
-margin-top:0;
-
-text-align:center;
-
+#btn-ubicacion:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .45);
+    transform: scale(1.08);
 }
 
-#info-content{
-
-line-height:1.8;
-
-font-size:15px;
-
+#btn-ubicacion:active {
+    transform: scale(.95);
 }
 
-.info-row{
-
-margin-bottom:8px;
-
+#btn-ubicacion.buscar {
+    animation: pulse 1s ease-in-out infinite;
 }
 
-.info-label{
-
-font-weight:bold;
-
-color:#7dc8ff;
-
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, .5); }
+    50%      { box-shadow: 0 0 0 10px rgba(66, 133, 244, 0); }
 }
 
-.panel-buttons{
-
-margin-top:20px;
-
-display:flex;
-
-gap:10px;
-
-flex-wrap:wrap;
-
+/* ==================================================
+   MARCADOR "TÚ" (punto verde con etiqueta)
+================================================== */
+.marker-tu {
+    width: 22px;
+    height: 22px;
+    background: #00c853;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+    position: relative;
+    animation: pop .3s ease-out;
 }
 
-.panel-buttons button{
+@keyframes pop {
+    0%   { transform: scale(0); }
+    70%  { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
 
-flex:1;
+.etiqueta-tu {
+    background: #00c853;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .4);
+    position: relative;
+    top: -6px;
+}
 
-min-width:180px;
+/* ==================================================
+   SCROLL
+================================================== */
+#results::-webkit-scrollbar {
+    width: 8px;
+}
 
+#results::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 8px;
+}
+
+.selected {
+    background: #4285f4 !important;
+    color: white;
+    border-left: 5px solid yellow;
+}
+
+mark {
+    background: gold;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+/* ==================================================
+   PANEL DE INFORMACIÓN
+================================================== */
+#info-panel {
+    margin-top: 25px;
+    padding: 20px;
+    background: rgba(255, 255, 255, .08);
+    border-radius: 15px;
+}
+
+#info-panel h2 {
+    margin-top: 0;
+    text-align: center;
+}
+
+#info-content {
+    line-height: 1.8;
+    font-size: 15px;
+}
+
+.info-row {
+    margin-bottom: 8px;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #7dc8ff;
+}
+
+.panel-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.panel-buttons button {
+    flex: 1;
+    min-width: 180px;
 }
