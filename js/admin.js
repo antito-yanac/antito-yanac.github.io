@@ -58,10 +58,27 @@ async function initFirebase() {
             mostrarToast(titulo, cuerpo, "alerta", true);
         });
 
-        // Intentar obtener token si hay permiso
-        if ("Notification" in window && Notification.permission === "granted") {
+        // Registrar el Service Worker (obligatorio para FCM)
+        let swReg = null;
+        if ("serviceWorker" in navigator) {
             try {
-                currentToken = await getToken(messaging, { vapidKey: vapidKey });
+                swReg = await navigator.serviceWorker.register(
+                    "./firebase-messaging-sw.js",
+                    { scope: "./" }
+                );
+                console.log("Service Worker registrado:", swReg.scope);
+            } catch (e) {
+                console.warn("No se pudo registrar el SW:", e);
+            }
+        }
+
+        // Intentar obtener token si hay permiso y SW registrado
+        if ("Notification" in window && Notification.permission === "granted" && swReg) {
+            try {
+                currentToken = await getToken(messaging, {
+                    vapidKey: vapidKey,
+                    serviceWorkerRegistration: swReg
+                });
                 if (currentToken) {
                     console.log("Token FCM del panel:", currentToken);
                 }
