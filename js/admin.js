@@ -6,23 +6,25 @@
 //
 // Usa modales personalizados (no confirm() nativo) para una mejor UX.
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-import {
-    getMessaging,
-    getToken,
-    onMessage
-} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-messaging.js";
-import { firebaseConfig, vapidKey } from "./firebase-config.js";
-import { mostrarToast, reproducirSonido } from "./notifications.js";
+import { inicializarFirebase } from "./notifications.js";
+import { enviarMensajePush, escucharMensajesPush } from "./mensajes.js";
+import { mostrarToast } from "./notifications.js";
+import { iniciarSesion, cerrarSesion, observarSesion, traducirErrorAuth } from "./auth.js";
 
 // ======================================================
-// Estado
+// Referencias al DOM: login
 // ======================================================
-let messaging = null;
-let currentToken = null;
+const loginContainer = document.getElementById("login-container");
+const panelContainer = document.getElementById("panel-container");
+const formLogin = document.getElementById("form-login");
+const inputEmail = document.getElementById("login-email");
+const inputPassword = document.getElementById("login-password");
+const btnLogin = document.getElementById("btn-login");
+const loginStatus = document.getElementById("login-status");
+const btnLogout = document.getElementById("btn-logout");
 
 // ======================================================
-// Referencias al DOM
+// Referencias al DOM: panel de mensajes
 // ======================================================
 const form = document.getElementById("form-mensaje");
 const inputTitulo = document.getElementById("titulo");
@@ -43,54 +45,78 @@ const btnModalCancelarModal = document.getElementById("modal-btn-cancelar");
 let modalCallback = null;
 
 // ======================================================
+// Autenticación: mostrar panel solo si hay sesión iniciada
+// ======================================================
+let panelYaInicializado = false;
+
+observarSesion((user) => {
+    if (user) {
+        // Sesión activa: mostrar panel, ocultar login
+        loginContainer.style.display = "none";
+        panelContainer.style.display = "";
+        if (!panelYaInicializado) {
+            panelYaInicializado = true;
+            initFirebase();
+        }
+    } else {
+        // Sin sesión: mostrar login, ocultar panel
+        loginContainer.style.display = "";
+        panelContainer.style.display = "none";
+    }
+});
+
+formLogin.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = inputEmail.value.trim();
+    const password = inputPassword.value;
+
+    if (!email || !password) return;
+
+    btnLogin.disabled = true;
+    btnLogin.innerHTML = '<span class="spinner"></span> Ingresando...';
+    loginStatus.textContent = "";
+    loginStatus.className = "status-bar";
+
+    try {
+        await iniciarSesion(email, password);
+        inputPassword.value = "";
+        loginStatus.textContent = "";
+    } catch (error) {
+        console.error("Error de autenticación:", error);
+        loginStatus.textContent = traducirErrorAuth(error.code);
+        loginStatus.className = "status-bar error";
+    } finally {
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = "🔓 Ingresar";
+    }
+});
+
+btnLogout.addEventListener("click", async () => {
+    try {
+        await cerrarSesion();
+        mostrarEstado("Sesión cerrada.", "");
+    } catch (error) {
+        console.error("Error cerrando sesión:", error);
+    }
+});
+
+// ======================================================
 // Inicializar Firebase al cargar la página
 // ======================================================
 async function initFirebase() {
     try {
-        const app = initializeApp(firebaseConfig);
-        messaging = getMessaging(app);
+        // Habilitar Firebase Messaging (permiso + Service Worker) de
+        // forma silenciosa, igual que en la página principal.
+        await inicializarFirebase();
 
-        // Escuchar mensajes entrantes (para verificar que funciona)
-        onMessage(messaging, (payload) => {
-            console.log("Mensaje recibido en panel:", payload);
-            const titulo = payload.notification?.title || "Notificación";
-            const cuerpo = payload.notification?.body || "Nuevo mensaje";
-            mostrarToast(titulo, cuerpo, "alerta", true);
-        });
-
-        // Registrar el Service Worker (obligatorio para FCM)
-        let swReg = null;
-        if ("serviceWorker" in navigator) {
-            try {
-                swReg = await navigator.serviceWorker.register(
-                    "./firebase-messaging-sw.js",
-                    { scope: "./" }
-                );
-                console.log("Service Worker registrado:", swReg.scope);
-            } catch (e) {
-                console.warn("No se pudo registrar el SW:", e);
-            }
-        }
-
-        // Intentar obtener token si hay permiso y SW registrado
-        if ("Notification" in window && Notification.permission === "granted" && swReg) {
-            try {
-                currentToken = await getToken(messaging, {
-                    vapidKey: vapidKey,
-                    serviceWorkerRegistration: swReg
-                });
-                if (currentToken) {
-                    console.log("Token FCM del panel:", currentToken);
-                }
-            } catch (e) {
-                console.info("No se obtuvo token en el panel:", e);
-            }
-        }
+        // También escuchar mensajes en tiempo real desde este mismo
+        // panel (por si el propio admin tiene la app abierta también).
+        escucharMensajesPush();
 
         mostrarEstado("Panel listo. Escribe tu mensaje y presiona Enviar.", "");
     } catch (error) {
         console.error("Error iniciando Firebase:", error);
-        mostrarEstado("Panel listo (modo local). Escribe tu mensaje y presiona Enviar.", "");
+        mostrarEstado("Panel listo. Escribe tu mensaje y presiona Enviar.", "");
     }
 }
 
@@ -139,7 +165,7 @@ document.addEventListener("keydown", (e) => {
 inputCuerpo.addEventListener("input", () => {
     const len = inputCuerpo.value.length;
     const max = 500;
-    charCounter.textContent = ${len} / ${max};
+    charCounter.textContent = `${len} / ${max}`;
 
     charCounter.classList.remove("warn", "danger");
     if (len > max * 0.8) charCounter.classList.add("warn");
@@ -198,7 +224,7 @@ form.addEventListener("submit", async (e) => {
     // Confirmar antes de enviar usando el modal personalizado
     mostrarModalConfirmacion(
         "Confirmar envío",
-        ¿Enviar este mensaje?\n\n📋 ${titulo}\n💬 ${cuerpo},
+        `¿Enviar este mensaje?\n\n📋 ${titulo}\n💬 ${cuerpo}`,
         (aceptar) => {
             if (aceptar) {
                 enviarMensaje(titulo, cuerpo);
@@ -208,7 +234,7 @@ form.addEventListener("submit", async (e) => {
 });
 
 // ======================================================
-// Enviar el mensaje push
+// Enviar el mensaje push (REAL, a todos los navegadores conectados)
 // ======================================================
 async function enviarMensaje(titulo, cuerpo) {
     btnEnviar.disabled = true;
@@ -216,66 +242,31 @@ async function enviarMensaje(titulo, cuerpo) {
     btnEnviar.innerHTML = '<span class="spinner"></span> Enviando...';
 
     try {
-        // Guardar mensaje en localStorage como respaldo
-        const mensaje = {
+        // Guardar mensaje en localStorage como respaldo/historial local
+        guardarMensajeLocal({
             id: Date.now(),
-            titulo: titulo,
-            cuerpo: cuerpo,
+            titulo,
+            cuerpo,
             fecha: new Date().toISOString()
-        };
+        });
 
-        guardarMensajeLocal(mensaje);
+        // Enviar a Firestore: todos los navegadores con la página
+        // abierta (index.html o admin.html) que estén escuchando
+        // recibirán este mensaje en tiempo real.
+        await enviarMensajePush(titulo, cuerpo);
 
-        // Intentar enviar via FCM si tenemos token
-        if (currentToken) {
-            const exito = await enviarViaFCM(currentToken, titulo, cuerpo);
-            if (exito) {
-                mostrarToast("✅ Mensaje enviado", "La notificación push fue enviada correctamente.", "exito", true);
-                mostrarEstado("✓ Mensaje enviado correctamente vía FCM.", "success");
-                limpiarFormulario();
-                return;
-            }
-        }
-
-        // Si no hay token o falló FCM, mostrar confirmación local
-        mostrarToast("✅ Mensaje enviado", "El mensaje fue guardado y enviado.", "exito", true);
-        mostrarEstado("✓ Mensaje enviado. Los dispositivos lo recibirán al abrir la app.", "success");
+        mostrarToast("✅ Mensaje enviado", "El mensaje fue enviado a todos los navegadores conectados.", "exito", true);
+        mostrarEstado("✓ Mensaje enviado correctamente.", "success");
         limpiarFormulario();
 
     } catch (error) {
         console.error("Error enviando mensaje:", error);
         mostrarToast("❌ Error", "No se pudo enviar el mensaje. Revisa la consola (F12).", "alerta", true);
-        mostrarEstado("✗ Error al enviar el mensaje.", "error");
+        mostrarEstado("✗ Error al enviar el mensaje: " + error.message, "error");
     } finally {
         btnEnviar.disabled = false;
         btnCancelar.disabled = false;
         btnEnviar.innerHTML = "✅ Enviar";
-    }
-}
-
-// ======================================================
-// Enviar via Firebase Cloud Messaging
-// ======================================================
-async function enviarViaFCM(token, titulo, cuerpo) {
-    try {
-        // Mostrar notificación local inmediata (simula el push)
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(titulo, {
-                body: cuerpo,
-                icon: "https://cdn-icons-png.flaticon.com/512/1827/1827301.png",
-                tag: "antamina-admin-" + Date.now()
-            });
-        }
-
-        // Disparar evento para que otras pestañas reciban el mensaje
-        window.dispatchEvent(new CustomEvent("nuevo-mensaje", {
-            detail: { titulo, cuerpo }
-        }));
-
-        return true;
-    } catch (e) {
-        console.error("Error en enviarViaFCM:", e);
-        return false;
     }
 }
 
@@ -312,6 +303,7 @@ function limpiarFormulario() {
 }
 
 // ======================================================
-// Iniciar
+// Iniciar: la inicialización de Firebase Messaging/Firestore
+// ahora ocurre dentro de observarSesion(), una vez que el
+// usuario haya iniciado sesión correctamente.
 // ======================================================
-initFirebase();
