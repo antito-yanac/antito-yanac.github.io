@@ -25,6 +25,24 @@ const MAPTILER_KEY = "j4zAW83dNrfEbSRUvYN0";
 //   pastel-v4    -> pastel
 const MAP_STYLE = "hybrid-v4";
 
+// ======================================================
+// Variables para ubicación actual ("Tú")
+// ======================================================
+let markerUbicacion = null;   // marcador verde "Tú"
+let circleAccuracy = null;    // círculo de precisión GPS
+let watchId = null;           // ID del seguimiento continuo
+
+// Icono personalizado: punto verde con etiqueta "Tú"
+const iconoTu = L.divIcon({
+    className: "",
+    html: '<div style="position:relative;text-align:center;">' +
+            '<div class="marker-tu"></div>' +
+            '<div class="etiqueta-tu">Tú</div>' +
+          '</div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+});
+
 export function crearMapa(idDiv) {
 
     map = L.map(idDiv);
@@ -34,7 +52,7 @@ export function crearMapa(idDiv) {
     // OpenStreetMap. Leaflet se mantiene igual.
     // --------------------------------------------------
     L.tileLayer(
-        `https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+        https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY},
         {
             tileSize: 512,
             zoomOffset: -1,
@@ -48,17 +66,147 @@ export function crearMapa(idDiv) {
 
     map.setView([-9.50, -77.00], 9);
 
+    // --------------------------------------------------
+    // Botón de ubicación actual (estilo Google Maps)
+    // --------------------------------------------------
+    const btnUbicacion = document.getElementById("btn-ubicacion");
+    if (btnUbicacion) {
+        btnUbicacion.addEventListener("click", mostrarMiUbicacion);
+    }
+
     return {
-
         cargarGeoJSON,
-
         irA,
-
         limpiarSeleccion
-
     };
 
 }
+
+// ======================================================
+// FUNCIÓN: Mostrar mi ubicación actual
+// ======================================================
+function mostrarMiUbicacion() {
+
+    const btn = document.getElementById("btn-ubicacion");
+
+    // Verificar soporte de geolocation
+    if (!navigator.geolocation) {
+        alert("Tu navegador no soporta geolocalización.");
+        return;
+    }
+
+    // Estado de carga: animación pulse
+    btn.classList.add("buscar");
+
+    // Opciones de alta precisión
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            // Éxito: quitar animación
+            btn.classList.remove("buscar");
+
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const accuracy = pos.coords.accuracy;
+
+            // Eliminar marcador y círculo anteriores si existen
+            if (markerUbicacion) {
+                map.removeLayer(markerUbicacion);
+            }
+            if (circleAccuracy) {
+                map.removeLayer(circleAccuracy);
+            }
+
+            // Círculo de precisión (radio = accuracy en metros)
+            circleAccuracy = L.circle([lat, lng], {
+                radius: accuracy,
+                color: "#00c853",
+                weight: 1.5,
+                opacity: 0.4,
+                fillColor: "#00c853",
+                fillOpacity: 0.12
+            }).addTo(map);
+
+            // Marcador verde "Tú"
+            markerUbicacion = L.marker([lat, lng], {
+                icon: iconoTu,
+                zIndexOffset: 1000
+            }).addTo(map);
+
+            markerUbicacion.bindPopup(
+                <b>📍 Tu ubicación</b><br> +
+                Lat: ${lat.toFixed(6)}<br> +
+                Lng: ${lng.toFixed(6)}<br> +
+                Precisión: ±${Math.round(accuracy)} m
+            );
+
+            // Volar hacia la ubicación con zoom apropiado
+            // Mayor accuracy → mayor zoom
+            let zoomLevel = 16;
+            if (accuracy > 100) zoomLevel = 14;
+            if (accuracy > 500) zoomLevel = 12;
+
+            map.flyTo([lat, lng], zoomLevel, { duration: 1.2 });
+
+            // Iniciar seguimiento continuo (actualiza al moverse)
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+            watchId = navigator.geolocation.watchPosition(
+                (pos2) => {
+                    if (markerUbicacion) {
+                        markerUbicacion.setLatLng([pos2.coords.latitude, pos2.coords.longitude]);
+                    }
+                    if (circleAccuracy) {
+                        circleAccuracy.setLatLng([pos2.coords.latitude, pos2.coords.longitude]);
+                        circleAccuracy.setRadius(pos2.coords.accuracy);
+                    }
+                },
+                (err) => { /* errores de seguimiento silenciosos */ },
+                { enableHighAccuracy: true, maximumAge: 5000 }
+            );
+
+            console.log("✅ Ubicación actual:", lat, lng, "±" + accuracy + "m");
+        },
+        (error) => {
+            // Error: quitar animación
+            btn.classList.remove("buscar");
+
+            let mensaje = "No se pudo obtener tu ubicación.\n\n";
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    mensaje += "⛔ Permiso denegado.\n" +
+                               "Activa la ubicación:\n" +
+                               "1. Toca el ícono 🔒 en la barra de direcciones\n" +
+                               "2. Permite el acceso a tu ubicación\n" +
+                               "3. Recarga la página";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    mensaje += "📡 Posición no disponible.\n" +
+                               "Verifica que el GPS esté activado.";
+                    break;
+                case error.TIMEOUT:
+                    mensaje += "⏱️ Tiempo agotado.\n" +
+                               "Inténtalo de nuevo.";
+                    break;
+                default:
+                    mensaje += "Error desconocido: " + error.message;
+            }
+            alert(mensaje);
+        },
+        options
+    );
+
+}
+
+// ======================================================
+// FIN: Funciones de ubicación
+// ======================================================
 
 function cargarGeoJSON(lugares) {
 
