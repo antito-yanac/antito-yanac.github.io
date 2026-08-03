@@ -6,16 +6,67 @@
 <title>🔔 Panel de Administración — Mensajes Antamina</title>
 <link rel="stylesheet" href="notifications.css">
 <link rel="stylesheet" href="css/admin.css">
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
 
-<div class="admin-container">
+<!-- ============================================
+     Pantalla de inicio de sesión (login)
+     ============================================ -->
+<div class="admin-container" id="login-container">
+
+    <div class="admin-header">
+        <h1><span class="icon">🔒</span> Iniciar sesión</h1>
+        <p>Acceso solo para administradores</p>
+    </div>
+
+    <form id="form-login" autocomplete="off">
+
+        <div class="form-group">
+            <label for="login-email">👤 Correo</label>
+            <input
+                type="email"
+                id="login-email"
+                name="email"
+                placeholder="tu-correo@ejemplo.com"
+                autocomplete="username"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label for="login-password">🔑 Contraseña</label>
+            <input
+                type="password"
+                id="login-password"
+                name="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" class="btn btn-enviar" id="btn-login">
+                🔓 Ingresar
+            </button>
+        </div>
+
+    </form>
+
+    <div class="status-bar" id="login-status"></div>
+
+</div>
+
+<!-- ============================================
+     Panel de mensajes (solo visible tras login)
+     ============================================ -->
+<div class="admin-container" id="panel-container" style="display:none;">
 
     <!-- Encabezado -->
     <div class="admin-header">
         <h1><span class="icon">🔔</span> Panel de Mensajes</h1>
         <p>Envía notificaciones push a los dispositivos registrados</p>
+        <button type="button" class="btn btn-cancelar" id="btn-logout" style="margin-top:12px;">
+            🚪 Cerrar sesión
+        </button>
     </div>
 
     <!-- Campos del formulario -->
@@ -61,6 +112,7 @@
     <div class="status-bar" id="status-bar"></div>
 
 </div>
+<!-- fin panel-container -->
 
 <!-- ============================================
      Modal de confirmación (Aceptar / Cancelar)
