@@ -113,7 +113,7 @@ export function mostrarToast(titulo, mensaje, tipo = "info", conSonido = false) 
     }
 
     const toast = document.createElement("div");
-    toast.className = toast toast-${tipo};
+    toast.className = `toast toast-${tipo}`;
 
     const iconos = {
         info: "ℹ️",

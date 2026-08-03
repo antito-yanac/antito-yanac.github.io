@@ -5,8 +5,7 @@
 
 import { cargarLugares } from "./data.js";
 import { crearBuscador, teclado } from "./search.js";
-import { crearMapa } from "./map.js";
-import { inicializarFirebase, mostrarToast, reproducirSonido } from "./notifications.js";
+import { crearMapa } from "./map.js";import { inicializarFirebase, mostrarToast, reproducirSonido } from "./notifications.js";
 
 //======================================================
 // Referencias HTML
@@ -40,11 +39,7 @@ async function iniciar() {
 
         mapa.cargarGeoJSON(lugares);
 
-        stats.textContent = ${lugares.length} lugares cargados;
-
-        // Inicializar Firebase Cloud Messaging (push, popups y sonido)
-        // Se ejecuta sin bloquear la app; si falla, solo muestra un toast.
-        inicializarFirebase().catch(err => console.error("Firebase:", err));
+        stats.textContent = `${lugares.length} lugares cargados`;        // Inicializar Firebase Cloud Messaging (push, popups y sonido)        // Se ejecuta sin bloquear la app; si falla, solo muestra un toast.        inicializarFirebase().catch(err => console.error("Firebase:", err));
 
     } catch (error) {
 
@@ -110,7 +105,7 @@ function cambiarColorFondo(texto) {
     const tono = (texto.length * 18) % 360;
 
     document.body.style.backgroundColor =
-        hsl(${tono},45%,30%);
+        `hsl(${tono},45%,30%)`;
 
 }
 
