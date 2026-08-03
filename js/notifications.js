@@ -113,7 +113,7 @@ export function mostrarToast(titulo, mensaje, tipo = "info", conSonido = false) 
     }
 
     const toast = document.createElement("div");
-    toast.className = toast toast-${tipo};
+    toast.className = `toast toast-${tipo}`;
 
     const iconos = {
         info: "ℹ️",
@@ -351,10 +351,10 @@ async function solicitarPermisoYToken(swRegistration) {
                     mensaje = "No se registró el Service Worker. Verifica firebase-messaging-sw.js en la raíz del sitio.";
                     break;
                 default:
-                    mensaje = Error FCM: ${error.code}. Revisa la consola (F12).;
+                    mensaje = `Error FCM: ${error.code}. Revisa la consola (F12).`;
             }
         } else if (error && error.message) {
-            mensaje = Error: ${error.message};
+            mensaje = `Error: ${error.message}`;
         }
 
         mostrarToast("Error FCM", mensaje, "alerta", false);
