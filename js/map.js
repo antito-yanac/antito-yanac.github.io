@@ -31,28 +31,32 @@ const MAP_STYLE = "hybrid-v4";
 let markerUbicacion = null;   // marcador verde "Tú"
 let circleAccuracy = null;    // círculo de precisión GPS
 let watchId = null;           // ID del seguimiento continuo
-
-// Icono personalizado: punto verde con etiqueta "Tú"
-const iconoTu = L.divIcon({
-    className: "",
-    html: '<div style="position:relative;text-align:center;">' +
-            '<div class="marker-tu"></div>' +
-            '<div class="etiqueta-tu">Tú</div>' +
-          '</div>',
-    iconSize: [22, 22],
-    iconAnchor: [11, 11]
-});
+let iconoTu = null;           // icono del marcador (se crea en crearMapa)
 
 export function crearMapa(idDiv) {
 
     map = L.map(idDiv);
 
     // --------------------------------------------------
+    // Crear el icono del marcador "Tú" aquí (cuando Leaflet
+    // ya está garantizado que está cargado)
+    // --------------------------------------------------
+    iconoTu = L.divIcon({
+        className: "",
+        html: '<div style="position:relative;text-align:center;">' +
+                '<div class="marker-tu"></div>' +
+                '<div class="etiqueta-tu">Tú</div>' +
+              '</div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+    });
+
+    // --------------------------------------------------
     // Capa base: MapTiler (raster tiles) reemplaza a
     // OpenStreetMap. Leaflet se mantiene igual.
     // --------------------------------------------------
     L.tileLayer(
-        https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY},
+        `https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
         {
             tileSize: 512,
             zoomOffset: -1,
@@ -139,10 +143,10 @@ function mostrarMiUbicacion() {
             }).addTo(map);
 
             markerUbicacion.bindPopup(
-                <b>📍 Tu ubicación</b><br> +
-                Lat: ${lat.toFixed(6)}<br> +
-                Lng: ${lng.toFixed(6)}<br> +
-                Precisión: ±${Math.round(accuracy)} m
+                `<b>📍 Tu ubicación</b><br>` +
+                `Lat: ${lat.toFixed(6)}<br>` +
+                `Lng: ${lng.toFixed(6)}<br>` +
+                `Precisión: ±${Math.round(accuracy)} m`
             );
 
             // Volar hacia la ubicación con zoom apropiado
