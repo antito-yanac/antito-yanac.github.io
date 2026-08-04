@@ -10,6 +10,7 @@ import { inicializarFirebase } from "./notifications.js";
 import { enviarMensajePush, escucharMensajesPush } from "./mensajes.js";
 import { mostrarToast } from "./notifications.js";
 import { iniciarSesion, cerrarSesion, observarSesion, traducirErrorAuth } from "./auth.js";
+import { mostrarAlertaCompleta, NIVELES_ALERTA } from "./alertas.js";
 
 // ======================================================
 // Referencias al DOM: login
@@ -33,6 +34,17 @@ const charCounter = document.getElementById("char-counter");
 const btnEnviar = document.getElementById("btn-enviar");
 const btnCancelar = document.getElementById("btn-cancelar");
 const statusBar = document.getElementById("status-bar");
+
+// Campos de ALERTA METEOROLÓGICA
+const tipoSelector = document.getElementById("tipo-selector");
+const camposAlerta = document.getElementById("campos-alerta");
+const selectNivel = document.getElementById("nivel");
+const inputDistrito = document.getElementById("distrito");
+const selectIntensidad = document.getElementById("intensidad");
+const inputLat = document.getElementById("lat");
+const inputLng = document.getElementById("lng");
+const inputDuracion = document.getElementById("duracion");
+const nivelPreview = document.getElementById("nivel-preview");
 
 // Modal de confirmación
 const modalConfirm = document.getElementById("modal-confirm");
@@ -173,6 +185,73 @@ inputCuerpo.addEventListener("input", () => {
 });
 
 // ======================================================
+// Campos de ALERTA METEOROLÓGICA
+// ======================================================
+
+// Mostrar / ocultar campos según el tipo seleccionado
+function actualizarVisibilidadCamposAlerta() {
+    const tipo = document.querySelector('input[name="tipo"]:checked')?.value || "normal";
+    if (tipo === "alerta") {
+        camposAlerta.style.display = "";
+        // Autofocus de sugerencias por defecto para una alerta común
+        if (!inputTitulo.value) inputTitulo.value = "⚡ ALERTA DE TORMENTA ELÉCTRICA";
+        actualizarNivelPreview();
+    } else {
+        camposAlerta.style.display = "none";
+    }
+}
+
+// Resaltar la opción activa (respaldo para navegadores sin :has())
+function actualizarOpcionActiva() {
+    document.querySelectorAll(".tipo-opcion").forEach(label => {
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio.checked) label.classList.add("activa");
+        else label.classList.remove("activa");
+    });
+}
+
+// Vista previa en vivo del nivel de alerta seleccionado
+function actualizarNivelPreview() {
+    const nivelKey = selectNivel.value;
+    const nivel = NIVELES_ALERTA[nivelKey];
+    if (!nivel || !nivelPreview) return;
+    nivelPreview.className = "nivel-preview np-" + nivelKey;
+    nivelPreview.innerHTML = `
+        <div class="np-titulo">${nivel.icono} ${nivel.nombre.toUpperCase()}</div>
+        <div class="np-desc">${nivel.descripcion}</div>`;
+}
+
+// Escuchar cambios de tipo (radio buttons)
+tipoSelector?.addEventListener("change", () => {
+    actualizarOpcionActiva();
+    actualizarVisibilidadCamposAlerta();
+});
+
+// Escuchar cambios de nivel
+selectNivel?.addEventListener("change", actualizarNivelPreview);
+
+// Botón para rellenar coordenadas de un lugar conocido de Antamina
+// (facilita pruebas sin buscar coordenadas manualmente)
+inputDistrito?.addEventListener("change", () => {
+    // Sugerir coordenadas si el distrito coincide con lugares conocidos
+    const sugerencias = {
+        "yanacancha":    { lat: -9.574987, lng: -77.029009 },
+        "san marcos":    { lat: -9.55,     lng: -77.08 },
+        "huallacocha":   { lat: -9.607721, lng: -77.026847 },
+        "huincush":      { lat: -9.5672,   lng: -77.009224 }
+    };
+    const key = inputDistrito.value.trim().toLowerCase();
+    if (sugerencias[key] && !inputLat.value && !inputLng.value) {
+        inputLat.value = sugerencias[key].lat;
+        inputLng.value = sugerencias[key].lng;
+    }
+});
+
+// Inicializar estado de los campos
+actualizarOpcionActiva();
+actualizarVisibilidadCamposAlerta();
+
+// ======================================================
 // Botón Cancelar: limpia el formulario
 // ======================================================
 btnCancelar.addEventListener("click", () => {
@@ -207,6 +286,7 @@ form.addEventListener("submit", async (e) => {
 
     const titulo = inputTitulo.value.trim();
     const cuerpo = inputCuerpo.value.trim();
+    const tipo = document.querySelector('input[name="tipo"]:checked')?.value || "normal";
 
     // Validar campos
     if (!titulo) {
@@ -221,13 +301,45 @@ form.addEventListener("submit", async (e) => {
         return;
     }
 
+    // Recopilar datos de alerta (si aplica)
+    let datosAlerta = null;
+    if (tipo === "alerta") {
+        const nivel = selectNivel.value;
+        const distrito = inputDistrito.value.trim();
+        const intensidad = selectIntensidad.value;
+        const lat = parseFloat(inputLat.value);
+        const lng = parseFloat(inputLng.value);
+        const duracionMin = parseInt(inputDuracion.value, 10);
+
+        datosAlerta = {
+            tipo: "alerta",
+            nivel: nivel,
+            distrito: distrito,
+            intensidad: intensidad,
+            lat: (!isNaN(lat)) ? lat : null,
+            lng: (!isNaN(lng)) ? lng : null,
+            duracionMin: (!isNaN(duracionMin) && duracionMin > 0) ? duracionMin : null
+        };
+    }
+
+    // Mensaje de confirmación según el tipo
+    let confirmMsg = `¿Enviar este mensaje?\n\n📋 ${titulo}\n💬 ${cuerpo}`;
+    if (tipo === "alerta") {
+        const nivel = NIVELES_ALERTA[datosAlerta.nivel];
+        confirmMsg = `¿Enviar esta ALERTA a todos los dispositivos?\n\n` +
+                     `${nivel.icono} Nivel: ${nivel.nombre}\n` +
+                     `📋 ${titulo}\n💬 ${cuerpo}`;
+        if (datosAlerta.distrito) confirmMsg += `\n📍 ${datosAlerta.distrito}`;
+        if (datosAlerta.duracionMin) confirmMsg += `\n⏰ ${datosAlerta.duracionMin} min`;
+    }
+
     // Confirmar antes de enviar usando el modal personalizado
     mostrarModalConfirmacion(
         "Confirmar envío",
-        `¿Enviar este mensaje?\n\n📋 ${titulo}\n💬 ${cuerpo}`,
+        confirmMsg,
         (aceptar) => {
             if (aceptar) {
-                enviarMensaje(titulo, cuerpo);
+                enviarMensaje(titulo, cuerpo, datosAlerta);
             }
         }
     );
@@ -236,7 +348,7 @@ form.addEventListener("submit", async (e) => {
 // ======================================================
 // Enviar el mensaje push (REAL, a todos los navegadores conectados)
 // ======================================================
-async function enviarMensaje(titulo, cuerpo) {
+async function enviarMensaje(titulo, cuerpo, datosAlerta = null) {
     btnEnviar.disabled = true;
     btnCancelar.disabled = true;
     btnEnviar.innerHTML = '<span class="spinner"></span> Enviando...';
@@ -247,16 +359,26 @@ async function enviarMensaje(titulo, cuerpo) {
             id: Date.now(),
             titulo,
             cuerpo,
+            tipo: datosAlerta ? "alerta" : "normal",
+            datosAlerta: datosAlerta,
             fecha: new Date().toISOString()
         });
 
         // Enviar a Firestore: todos los navegadores con la página
         // abierta (index.html o admin.html) que estén escuchando
         // recibirán este mensaje en tiempo real.
-        await enviarMensajePush(titulo, cuerpo);
+        // Si es alerta, datosAlerta viaja dentro del documento.
+        await enviarMensajePush(titulo, cuerpo, datosAlerta);
 
-        mostrarToast("✅ Mensaje enviado", "El mensaje fue enviado a todos los navegadores conectados.", "exito", true);
-        mostrarEstado("✓ Mensaje enviado correctamente.", "success");
+        const esAlerta = datosAlerta && datosAlerta.tipo === "alerta";
+        mostrarToast(
+            esAlerta ? "✅ Alerta enviada" : "✅ Mensaje enviado",
+            esAlerta
+                ? "La alerta meteorológica fue enviada a todos los navegadores conectados."
+                : "El mensaje fue enviado a todos los navegadores conectados.",
+            "exito", true
+        );
+        mostrarEstado(esAlerta ? "✓ Alerta enviada correctamente." : "✓ Mensaje enviado correctamente.", "success");
         limpiarFormulario();
 
     } catch (error) {
@@ -299,6 +421,12 @@ function limpiarFormulario() {
     form.reset();
     charCounter.textContent = "0 / 500";
     charCounter.classList.remove("warn", "danger");
+    // Reiniciar a "Mensaje normal" y ocultar campos de alerta
+    const radioNormal = document.querySelector('input[name="tipo"][value="normal"]');
+    if (radioNormal) radioNormal.checked = true;
+    actualizarOpcionActiva();
+    actualizarVisibilidadCamposAlerta();
+    if (nivelPreview) nivelPreview.innerHTML = "";
     inputTitulo.focus();
 }
 
