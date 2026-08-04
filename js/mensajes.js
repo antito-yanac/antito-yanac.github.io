@@ -18,6 +18,7 @@
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { obtenerApp } from "./firebase-app.js";
 import { mostrarToast, reproducirSonido } from "./notifications.js";
+import { mostrarAlertaCompleta } from "./alertas.js";
 
 const NOMBRE_COLECCION = "mensajes_push";
 
@@ -35,17 +36,28 @@ function obtenerDB() {
 /**
  * Envía un mensaje nuevo a Firestore. Todos los navegadores con
  * escucharMensajesPush() activo lo recibirán en tiempo real.
+ *
+ * Para una ALERTA METEOROLÓGICA, pasar el objeto datosAlerta:
+ *   { nivel, titulo, cuerpo, distrito, intensidad, lat, lng, duracionMin, tipo:"alerta" }
+ *
  * @param {string} titulo
  * @param {string} cuerpo
+ * @param {object} [datosAlerta]  - datos extendidos de alerta (opcional)
  */
-export async function enviarMensajePush(titulo, cuerpo) {
+export async function enviarMensajePush(titulo, cuerpo, datosAlerta = null) {
     const database = obtenerDB();
     const ref = collection(database, NOMBRE_COLECCION);
-    await addDoc(ref, {
+    const doc = {
         titulo,
         cuerpo,
         fecha: serverTimestamp()
-    });
+    };
+    // Si vienen datos de alerta, incluirlos para que los navegadores
+    // puedan mostrar el sistema de alerta completo.
+    if (datosAlerta) {
+        Object.assign(doc, datosAlerta);
+    }
+    await addDoc(ref, doc);
 }
 
 /**
@@ -76,8 +88,27 @@ export function escucharMensajesPush() {
                     const titulo = data.titulo || "🔔 Notificación";
                     const cuerpo = data.cuerpo || "";
 
-                    // Popup visual + sonido
-                    mostrarToast(titulo, cuerpo, "alerta", true);
+                    // ¿Es una ALERTA METEOROLÓGICA?
+                    // Lo es si tiene campo "tipo" === "alerta" o si tiene "nivel".
+                    const esAlerta = data.tipo === "alerta" || (data.nivel && data.nivel !== "normal");
+
+                    if (esAlerta) {
+                        // --- Sistema de alerta completo (12 efectos) ---
+                        reproducirSonido();
+                        mostrarAlertaCompleta({
+                            nivel:    data.nivel || "emergencia",
+                            titulo:   titulo,
+                            mensaje:  cuerpo,
+                            distrito: data.distrito || "",
+                            intensidad: data.intensidad || "",
+                            lat:      (typeof data.lat === "number") ? data.lat : null,
+                            lng:      (typeof data.lng === "number") ? data.lng : null,
+                            duracionMin: (typeof data.duracionMin === "number") ? data.duracionMin : null
+                        });
+                    } else {
+                        // --- Mensaje normal: toast simple (comportamiento original) ---
+                        mostrarToast(titulo, cuerpo, "alerta", true);
+                    }
 
                     // Notificación nativa del sistema (si hay permiso)
                     if ("Notification" in window && Notification.permission === "granted") {
