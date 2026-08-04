@@ -33,6 +33,106 @@ let circleAccuracy = null;    // círculo de precisión GPS
 let watchId = null;           // ID del seguimiento continuo
 let iconoTu = null;           // icono del marcador (se crea en crearMapa)
 
+// ======================================================
+// 7. MAPA ILUMINADO — Alerta meteorológica
+// ======================================================
+// Crea un círculo rojo parpadeante + un rayo SVG que cae sobre
+// el punto indicado. Devuelve un objeto con método detener()
+// para que js/alertas.js pueda limpiarlo al cerrar la alerta.
+//
+// nivelKey: "vigilancia" | "precaucion" | "alerta" | "emergencia"
+export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
+
+    if (!map) return null;
+
+    const colores = {
+        vigilancia: "#2ecc71",
+        precaucion: "#f1c40f",
+        alerta:     "#e67e22",
+        emergencia: "#e74c3c"
+    };
+    const color = colores[nivelKey] || colores.emergencia;
+
+    // --- Círculo rojo parpadeante ---
+    const circulo = L.circle([lat, lng], {
+        radius: 1800,            // metros
+        color: color,
+        weight: 3,
+        opacity: 0.9,
+        fillColor: color,
+        fillOpacity: 0.2,
+        dashArray: "6 6"
+    }).addTo(map);
+
+    // --- Núcleo (punto central sólido) ---
+    const nucleo = L.circleMarker([lat, lng], {
+        radius: 10,
+        color: "#fff",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.95
+    }).addTo(map);
+
+    // --- Rayo SVG cayendo sobre el punto ---
+    const rayoIcon = L.divIcon({
+        className: "al-mapa-rayo",
+        html: `<svg class="al-mapa-rayo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                 <polygon points="58,5 30,52 48,52 38,95 72,42 52,42 62,5"
+                          fill="#ffeb3b" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+               </svg>`,
+        iconSize: [50, 50],
+        iconAnchor: [25, 25]
+    });
+    const rayoMarker = L.marker([lat, lng], {
+        icon: rayoIcon,
+        zIndexOffset: 2000
+    }).addTo(map);
+
+    // --- Anillo de pulso expansivo (radar) ---
+    const pulsoIcon = L.divIcon({
+        className: "",
+        html: `<div style="width:40px;height:40px;border-radius:50%;
+                 border:3px solid ${color};position:relative;
+                 animation:al-radar-pulso 2s ease-out infinite;"></div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+    const pulsoMarker = L.marker([lat, lng], { icon: pulsoIcon, zIndexOffset: 1900 }).addTo(map);
+
+    // --- Popup informativo en el punto ---
+    circulo.bindPopup(
+        `<b>⚡ Zona de alerta</b><br>` +
+        `Actividad eléctrica detectada<br>` +
+        `Lat: ${lat.toFixed(5)}<br>Lng: ${lng.toFixed(5)}`
+    );
+
+    // --- Parpadeo del círculo (opacidad) ---
+    let parpadeoOn = true;
+    const intervalParpadeo = setInterval(() => {
+        parpadeoOn = !parpadeoOn;
+        circulo.setStyle({ fillOpacity: parpadeoOn ? 0.35 : 0.12, opacity: parpadeoOn ? 0.9 : 0.4 });
+    }, 700);
+
+    // --- Volar al punto ---
+    map.flyTo([lat, lng], 12, { duration: 1.4 });
+
+    return {
+        map,
+        circulo,
+        nucleo,
+        rayoMarker,
+        pulsoMarker,
+        intervalParpadeo,
+        detener() {
+            clearInterval(intervalParpadeo);
+            try { map.removeLayer(circulo); } catch(e){}
+            try { map.removeLayer(nucleo); } catch(e){}
+            try { map.removeLayer(rayoMarker); } catch(e){}
+            try { map.removeLayer(pulsoMarker); } catch(e){}
+        }
+    };
+}
+
 export function crearMapa(idDiv) {
 
     map = L.map(idDiv);
