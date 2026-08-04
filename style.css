@@ -53,16 +53,16 @@ h1 {
 }
 
 #results {
-    margin-top: 20px;
-    max-height: 300px;
+    margin-top: 15px;   /* ERA 20 A 15 */
+    max-height: 180px;  /* ERA 300 A 180 */
     overflow-y: auto;
 }
 
 .result {
-    padding: 15px;
-    margin-bottom: 10px;
+    padding: 9px 12px;   /* 15px */
+    margin-bottom: 10px;  /* 6px*/ 
     background: rgba(255, 255, 255, .08);
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: .2s;
 }
@@ -76,8 +76,8 @@ h1 {
 }
 
 .result p {
-    margin: 4px 0;
-    font-size: 14px;
+    margin: 2px 0;
+    font-size: 12px;
 }
 
 /* ==================================================
@@ -89,7 +89,7 @@ h1 {
 }
 
 #map {
-    height: 450px;
+    height: 630px;   /* 450 + 40% ≈ 630 */
     border-radius: 15px;
     overflow: hidden;
     border: 2px solid rgba(255, 255, 255, .15);
@@ -196,24 +196,25 @@ mark {
    PANEL DE INFORMACIÓN
 ================================================== */
 #info-panel {
-    margin-top: 25px;
-    padding: 20px;
+    margin-top: 18px;
+    padding: 10px 14px;
     background: rgba(255, 255, 255, .08);
-    border-radius: 15px;
+    border-radius: 12px;
 }
 
 #info-panel h2 {
-    margin-top: 0;
+    margin: 0 0 8px;
     text-align: center;
+    font-size: 22px;
 }
 
 #info-content {
-    line-height: 1.8;
-    font-size: 15px;
+    line-height: 1.45;
+    font-size: 13px;
 }
 
 .info-row {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .info-label {
