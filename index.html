@@ -17,6 +17,9 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <!-- Estilos de notificaciones (toasts/popups) -->
 <link rel="stylesheet" href="notifications.css">
 
+<!-- Estilos del Sistema de Alerta Meteorológica -->
+<link rel="stylesheet" href="css/alerts.css">
+
 </head>
 
 <body>
@@ -34,6 +37,15 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <div id="stats">
         Cargando lugares...
+    </div>
+
+    <!-- Botón de prueba del Sistema de Alerta (opcional, se puede quitar) -->
+    <div id="alerta-test-wrap" style="text-align:center; margin-top:12px;">
+        <button id="btn-test-alerta" type="button"
+            style="background:rgba(231,76,60,0.25); border:1.5px solid rgba(231,76,60,0.6); color:#ff9a8a;
+                   padding:8px 16px; border-radius:20px; cursor:pointer; font-size:13px; font-family:inherit;">
+            ⚡ Probar alerta meteorológica
+        </button>
     </div>
 
     <div id="results">
