@@ -8,6 +8,7 @@ import { crearBuscador, teclado } from "./search.js";
 import { crearMapa } from "./map.js";
 import { inicializarFirebase } from "./notifications.js";
 import { escucharMensajesPush } from "./mensajes.js";
+import { mostrarAlertaCompleta, cerrarAlertaTotal } from "./alertas.js";
 
 //======================================================
 // Referencias HTML
@@ -119,6 +120,54 @@ function cambiarColorFondo(texto) {
         `hsl(${tono},45%,30%)`;
 
 }
+
+//======================================================
+// Botón de prueba del Sistema de Alerta Meteorológica
+// Simula la recepción de una alerta para verificar los
+// 12 efectos visuales. Se puede eliminar en producción.
+//======================================================
+
+function configurarBotonPrueba() {
+
+    const btn = document.getElementById("btn-test-alerta");
+
+    if (!btn) return;
+
+    let nivelIndex = 0;
+    const niveles = ["vigilancia", "precaucion", "alerta", "emergencia"];
+    const titulos = {
+        vigilancia:  "🌩️ VIGILANCIA METEOROLÓGICA",
+        precaucion:  "⚡ PRECAUCIÓN: ACTIVIDAD ELÉCTRICA",
+        alerta:      "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+        emergencia:  "⚡ ALERTA ROJA: TORMENTA ELÉCTRICA INTENSA"
+    };
+    const mensajes = {
+        vigilancia:  "Se detectó actividad eléctrica lejana acercándose a la zona.",
+        precaucion:  "Posibles descargas eléctricas detectadas en las proximidades.",
+        alerta:      "Se detectó actividad eléctrica intensa en el distrito de Yanacancha.",
+        emergencia:  "Tormenta eléctrica severa sobre el distrito de Yanacancha. Descargas frecuentes."
+    };
+
+    btn.addEventListener("click", () => {
+        const nivel = niveles[nivelIndex % niveles.length];
+        nivelIndex++;
+
+        // Usar coordenadas reales de un lugar de Antamina (Yanacancha)
+        mostrarAlertaCompleta({
+            nivel: nivel,
+            titulo: titulos[nivel],
+            mensaje: mensajes[nivel],
+            distrito: "Yanacancha",
+            intensidad: nivel === "emergencia" ? "Muy alta" : nivel === "alerta" ? "Alta" : "Moderada",
+            lat: -9.574987,
+            lng: -77.029009,
+            duracionMin: nivel === "emergencia" ? 15 : nivel === "alerta" ? 30 : 45
+        });
+    });
+
+}
+
+configurarBotonPrueba();
 
 //======================================================
 
