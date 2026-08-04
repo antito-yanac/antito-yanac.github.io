@@ -6,6 +6,7 @@
 <title>🔔 Panel de Administración — Mensajes Antamina</title>
 <link rel="stylesheet" href="notifications.css">
 <link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/alerts.css">
 </head>
 <body>
 
@@ -95,6 +96,93 @@
                 required></textarea>
             <div class="char-counter" id="char-counter">0 / 500</div>
         </div>
+
+        <!-- ============================================
+             MODO: Mensaje normal o Alerta meteorológica
+             ============================================ -->
+        <div class="form-group">
+            <label>📨 Tipo de mensaje</label>
+            <div class="tipo-selector" id="tipo-selector">
+                <label class="tipo-opcion">
+                    <input type="radio" name="tipo" value="normal" checked>
+                    <span>💬 Mensaje normal</span>
+                </label>
+                <label class="tipo-opcion">
+                    <input type="radio" name="tipo" value="alerta">
+                    <span>⚡ Alerta meteorológica</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Campos de ALERTA METEOROLÓGICA (ocultos por defecto) -->
+        <div id="campos-alerta" style="display:none;">
+
+            <!-- Nivel de alerta -->
+            <div class="form-group">
+                <label for="nivel">🎯 Nivel de alerta</label>
+                <select id="nivel" name="nivel">
+                    <option value="vigilancia">🟢 Vigilancia — Actividad eléctrica lejana</option>
+                    <option value="precaucion">🟡 Precaución — Posibles descargas</option>
+                    <option value="alerta" selected>🟠 Alerta — Evite actividades al aire libre</option>
+                    <option value="emergencia">🔴 Emergencia — Refúgiese inmediatamente</option>
+                </select>
+                <div class="nivel-preview" id="nivel-preview"></div>
+            </div>
+
+            <!-- Distrito / Zona -->
+            <div class="form-group">
+                <label for="distrito">📍 Distrito / Zona</label>
+                <input
+                    type="text"
+                    id="distrito"
+                    name="distrito"
+                    placeholder="Ej: Yanacancha, San Marcos, Huallacocha..."
+                    maxlength="80">
+            </div>
+
+            <!-- Intensidad -->
+            <div class="form-group">
+                <label for="intensidad">📊 Intensidad</label>
+                <select id="intensidad" name="intensidad">
+                    <option value="Baja">Baja</option>
+                    <option value="Moderada" selected>Moderada</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Muy alta">Muy alta</option>
+                </select>
+            </div>
+
+            <!-- Coordenadas (opcional, para iluminar el mapa) -->
+            <div class="form-group">
+                <label for="coordenadas">🗺️ Coordenadas (opcional)</label>
+                <div style="display:flex; gap:8px;">
+                    <input
+                        type="number" step="any"
+                        id="lat" name="lat"
+                        placeholder="Latitud (Ej: -9.575)"
+                        style="flex:1;">
+                    <input
+                        type="number" step="any"
+                        id="lng" name="lng"
+                        placeholder="Longitud (Ej: -77.029)"
+                        style="flex:1;">
+                </div>
+                <small style="opacity:0.7; font-size:12px;">Si se indican, el mapa iluminará el punto con un rayo.</small>
+            </div>
+
+            <!-- Duración de la alerta (contador) -->
+            <div class="form-group">
+                <label for="duracion">⏰ Duración de la alerta (minutos)</label>
+                <input
+                    type="number"
+                    id="duracion" name="duracion"
+                    placeholder="Ej: 30"
+                    min="1" max="1440"
+                    value="30">
+                <small style="opacity:0.7; font-size:12px;">Muestra un contador regresivo. Dejar vacío = sin contador.</small>
+            </div>
+
+        </div>
+        <!-- fin campos-alerta -->
 
         <!-- Botones: Enviar (aceptar) y Cancelar -->
         <div class="button-group">
