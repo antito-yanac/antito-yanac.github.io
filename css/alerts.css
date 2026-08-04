@@ -1,0 +1,713 @@
+/* css/alerts.css
+   ============================================================
+   Sistema de Alerta Meteorológica — Buscador Lugares Antamina
+   ------------------------------------------------------------
+   12 efectos:
+   1. Banner de alerta a pantalla completa (baja + rebote + resplandor)
+   2. Flash de fondo (relámpago sutil, no repetitivo)
+   3. Barra superior permanente (amarillo/naranja/rojo)
+   4. Tarjeta flotante inferior derecha (sube desde abajo)
+   5. Pulso radar alrededor del icono
+   6. Contador regresivo
+   7. Mapa iluminado (círculo rojo parpadeante + rayo)
+   8. Efecto sirena (borde rojo↔naranja cada segundo)
+   9. Niveles de alerta con colores estandarizados
+   10. Iconografía grande (70-100px)
+   11. Animación del rayo SVG (aparece/brilla/desaparece)
+   12. Botones de acción destacados
+   ============================================================ */
+
+/* ============================================================
+   VARIABLES POR NIVEL DE ALERTA
+   ============================================================ */
+:root {
+    --al-vigilancia: #2ecc71;   /* 🟢 verde  */
+    --al-precaucion: #f1c40f;   /* 🟡 amarillo */
+    --al-alerta:     #e67e22;   /* 🟠 naranja */
+    --al-emergencia: #e74c3c;   /* 🔴 rojo    */
+}
+
+/* ============================================================
+   2. FLASH DE FONDO (efecto relámpago, sutil, no repetitivo)
+   ============================================================ */
+@keyframes al-flash-relampago {
+    0%   { background-color: transparent; }
+    8%   { background-color: #3a3a3a; }       /* gris oscuro  */
+    10%  { background-color: #ffffff; }       /* blanco 100ms */
+    12%  { background-color: #3a3a3a; }       /* gris         */
+    30%  { background-color: #3a3a3a; }
+    32%  { background-color: #ffffff; }       /* blanco       */
+    34%  { background-color: #3a3a3a; }       /* gris         */
+    60%  { background-color: #3a3a3a; }
+    100% { background-color: transparent; }   /* normal       */
+}
+
+.al-flash-activo {
+    animation: al-flash-relampago 4.5s ease-out 1 forwards;
+}
+
+/* ============================================================
+   1. OVERLAY OSCURECIDO + BANNER A PANTALLA COMPLETA
+   ============================================================ */
+#al-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    padding-top: 40px;
+    overflow-y: auto;
+}
+
+#al-overlay.al-visible {
+    display: flex;
+    opacity: 1;
+}
+
+/* Panel del banner — baja desde arriba con rebote */
+.al-panel {
+    width: min(92vw, 640px);
+    margin-top: -120vh;                 /* empieza fuera, arriba */
+    border-radius: 18px;
+    padding: 30px 28px 26px;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--al-color, #e74c3c), var(--al-color-dark, #c0392b));
+    /* borde con efecto sirena (ver más abajo) */
+    border: 3px solid var(--al-color, #e74c3c);
+    transform: translateY(0);
+}
+
+/* Animación de bajada + rebote */
+@keyframes al-bajar-rebote {
+    0%   { margin-top: -120vh; }
+    60%  { margin-top: 30px; }
+    72%  { margin-top: 0; }      /* rebote arriba */
+    84%  { margin-top: 22px; }   /* rebote abajo */
+    93%  { margin-top: 8px; }
+    100% { margin-top: 20px; }   /* reposo */
+}
+
+#al-overlay.al-visible .al-panel {
+    animation: al-bajar-rebote 0.9s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
+}
+
+/* Resplandor rojo periódico alrededor del panel */
+@keyframes al-resplandor {
+    0%, 100% { box-shadow: 0 20px 60px rgba(0,0,0,0.5),
+                            0 0 0 rgba(231,76,60,0); }
+    50%      { box-shadow: 0 20px 60px rgba(0,0,0,0.5),
+                            0 0 45px 8px var(--al-glow, rgba(231,76,60,0.7)); }
+}
+
+.al-panel.al-resplandor-activo {
+    animation: al-bajar-rebote 0.9s cubic-bezier(0.22, 1.2, 0.36, 1) forwards,
+               al-resplandor 2.4s ease-in-out 1s infinite;
+}
+
+/* ============================================================
+   8. EFECTO SIRENA — borde del panel rojo↔naranja cada segundo
+   ============================================================ */
+@keyframes al-sirena-borde {
+    0%, 100% { border-color: #e74c3c; }   /* rojo   */
+    50%      { border-color: #e67e22; }   /* naranja */
+}
+
+.al-panel.al-sirena-activa {
+    border: 4px solid #e74c3c;
+    animation: al-bajar-rebote 0.9s cubic-bezier(0.22,1.2,0.36,1) forwards,
+               al-sirena-borde 1s steps(1, end) 1s infinite,
+               al-resplandor 2.4s ease-in-out 1.4s infinite;
+}
+
+/* Capa de brillo interno del panel */
+.al-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%,
+                rgba(255,255,255,0.18), transparent 60%);
+    pointer-events: none;
+}
+
+/* ============================================================
+   10 + 5. ICONO GRANDE CON PULSO RADAR
+   ============================================================ */
+.al-icono-wrap {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* El icono principal (70-100px) */
+.al-icono {
+    font-size: 84px;
+    line-height: 1;
+    z-index: 3;
+    position: relative;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+    animation: al-icono-tilt 3s ease-in-out infinite;
+}
+
+@keyframes al-icono-tilt {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50%      { transform: scale(1.12) rotate(-6deg); }
+}
+
+/* Ondas concéntricas tipo radar (3 ondas) */
+.al-radar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid var(--al-color, #e74c3c);
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.al-radar.r1 { animation: al-radar-pulso 2s ease-out infinite; }
+.al-radar.r2 { animation: al-radar-pulso 2s ease-out 0.66s infinite; }
+.al-radar.r3 { animation: al-radar-pulso 2s ease-out 1.32s infinite; }
+
+@keyframes al-radar-pulso {
+    0%   { transform: translate(-50%,-50%) scale(0.6); opacity: 0.9; }
+    100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0; }
+}
+
+/* ============================================================
+   11. ANIMACIÓN DEL RAYO SVG (aparece/brilla/desaparece)
+   ============================================================ */
+.al-rayo-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90px;
+    height: 90px;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 4;
+    filter: drop-shadow(0 0 14px rgba(255, 235, 59, 0.95))
+            drop-shadow(0 0 28px rgba(255, 235, 59, 0.6));
+    opacity: 0;
+    animation: al-rayo-flash 4.5s ease-in-out 1.2s infinite;
+    pointer-events: none;
+}
+
+@keyframes al-rayo-flash {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.3) rotate(-8deg); }
+    4%   { opacity: 1; transform: translate(-50%,-50%) scale(1.15) rotate(-8deg); }
+    8%   { opacity: 0.4; transform: translate(-50%,-50%) scale(1) rotate(-8deg); }
+    10%  { opacity: 1; transform: translate(-50%,-50%) scale(1.1) rotate(-8deg); }
+    14%  { opacity: 0; transform: translate(-50%,-50%) scale(0.6) rotate(-8deg); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(0.3) rotate(-8deg); }
+}
+
+/* ============================================================
+   TEXTO DEL BANNER
+   ============================================================ */
+.al-titulo {
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.al-nivel-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(0,0,0,0.28);
+    margin: 0 auto 12px;
+}
+
+.al-mensaje {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 10px 4px 16px;
+    opacity: 0.97;
+}
+
+.al-recomendacion {
+    text-align: center;
+    font-size: 14px;
+    font-style: italic;
+    opacity: 0.9;
+    margin: 0 4px 18px;
+}
+
+/* ============================================================
+   6. CONTADOR REGRESIVO
+   ============================================================ */
+.al-contador-wrap {
+    text-align: center;
+    margin: 0 0 18px;
+}
+
+.al-contador-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.85;
+    margin-bottom: 4px;
+}
+
+.al-contador {
+    font-size: 30px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+    text-shadow: 0 0 14px rgba(255,255,255,0.35);
+}
+
+.al-contador.al-critico {
+    color: #fff;
+    animation: al-contador-parpadeo 0.6s ease-in-out infinite;
+}
+
+@keyframes al-contador-parpadeo {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+}
+
+/* ============================================================
+   12. BOTONES DE ACCIÓN DESTACADOS
+   ============================================================ */
+.al-botones {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.al-btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 13px 18px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.al-btn:active { transform: scale(0.96); }
+
+.al-btn-primario {
+    background: #fff;
+    color: var(--al-color-dark, #c0392b);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+.al-btn-primario:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+    filter: brightness(1.05);
+}
+
+.al-btn-secundario {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    backdrop-filter: blur(4px);
+}
+.al-btn-secundario:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.al-btn-cerrar {
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.3);
+    min-width: 110px;
+    flex: 0 0 auto;
+}
+.al-btn-cerrar:hover {
+    background: rgba(0,0,0,0.55);
+    transform: translateY(-2px);
+}
+
+/* ============================================================
+   3. BARRA SUPERIOR PERMANENTE
+   ============================================================ */
+#al-barra-superior {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 25000;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 18px;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--al-color, #e74c3c);
+    box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.22,1.2,0.36,1);
+    cursor: pointer;
+}
+
+#al-barra-superior.al-visible {
+    display: flex;
+    transform: translateY(0);
+}
+
+.al-barra-icono { font-size: 20px; flex-shrink: 0; }
+.al-barra-texto { flex: 1; min-width: 0; }
+.al-barra-nivel { font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; }
+.al-barra-desc  { font-size: 13px; opacity: 0.95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-barra-tiempo { font-size: 12px; opacity: 0.85; flex-shrink: 0; white-space: nowrap; }
+.al-barra-cerrar {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.al-barra-cerrar:hover { background: rgba(255,255,255,0.4); }
+
+/* Animación sutil del borde inferior de la barra */
+@keyframes al-barra-brillo {
+    0%, 100% { box-shadow: 0 3px 14px rgba(0,0,0,0.35); }
+    50%      { box-shadow: 0 3px 14px rgba(0,0,0,0.35),
+                            0 4px 22px 0 var(--al-glow, rgba(231,76,60,0.6)); }
+}
+#al-barra-superior.al-visible {
+    animation: al-barra-brillo 3s ease-in-out infinite;
+}
+
+/* ============================================================
+   4. TARJETA FLOTANTE (esquina inferior derecha)
+   ============================================================ */
+#al-tarjeta {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 24000;
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    background: #1c1c1e;
+    color: #fff;
+    border-radius: 16px;
+    padding: 18px 18px 16px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+    border-left: 5px solid var(--al-color, #e74c3c);
+    /* Entra desde abajo */
+    transform: translateY(120px);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.22,1.2,0.36,1), opacity 0.5s ease;
+    display: none;
+}
+
+#al-tarjeta.al-visible {
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.al-tarjeta-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.al-tarjeta-icono {
+    font-size: 34px;
+    line-height: 1;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* Pulso pequeño en el icono de la tarjeta */
+.al-tarjeta-icono::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--al-color, #e74c3c);
+    animation: al-radar-pulso 2.2s ease-out infinite;
+}
+
+.al-tarjeta-titulo {
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.al-tarjeta-sub {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--al-color, #e74c3c);
+    font-weight: 700;
+}
+
+.al-tarjeta-cuerpo {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 8px 0 14px;
+    color: #ddd;
+}
+
+.al-tarjeta-cuerpo strong { color: #fff; }
+
+.al-tarjeta-btn {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    background: var(--al-color, #e74c3c);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 0.2s, transform 0.15s;
+}
+.al-tarjeta-btn:hover { filter: brightness(1.12); }
+.al-tarjeta-btn:active { transform: scale(0.97); }
+
+.al-tarjeta-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+}
+.al-tarjeta-cerrar:hover { color: #fff; }
+
+/* ============================================================
+   7. EFECTOS EN EL MAPA (rayo cayendo + círculo rojo)
+   ============================================================ */
+/* Rayo SVG que cae sobre el punto del mapa */
+.al-mapa-rayo {
+    position: relative;
+    width: 46px;
+    height: 46px;
+}
+
+.al-mapa-rayo-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 8px rgba(255, 235, 59, 0.9));
+    animation: al-mapa-rayo-cae 2.5s ease-in-out infinite;
+}
+
+@keyframes al-mapa-rayo-cae {
+    0%, 70%, 100% { opacity: 0; transform: translateY(-30px) scale(0.6); }
+    75% { opacity: 1; transform: translateY(0) scale(1.2); }
+    82% { opacity: 0.8; transform: translateY(0) scale(1); }
+    90% { opacity: 1; transform: translateY(0) scale(1.1); }
+    95% { opacity: 0; transform: translateY(0) scale(0.8); }
+}
+
+/* Círculo rojo parpadeante en el mapa (usado vía Leaflet circleMarker) */
+@keyframes al-mapa-pulso {
+    0%, 100% { opacity: 0.9; }
+    50%      { opacity: 0.3; }
+}
+
+/* ============================================================
+   MODAL DE MEDIDAS DE SEGURIDAD
+   ============================================================ */
+#al-modal-seguridad {
+    position: fixed;
+    inset: 0;
+    z-index: 32000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+}
+
+#al-modal-seguridad.al-visible {
+    display: flex;
+    opacity: 1;
+}
+
+.al-modal-contenido {
+    width: min(90vw, 520px);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #232326;
+    color: #fff;
+    border-radius: 18px;
+    padding: 28px 26px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    border: 2px solid var(--al-color, #e74c3c);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.22,1.2,0.36,1);
+}
+
+#al-modal-seguridad.al-visible .al-modal-contenido {
+    transform: scale(1);
+}
+
+.al-modal-titulo {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    text-align: center;
+}
+
+.al-modal-sub {
+    text-align: center;
+    font-size: 13px;
+    color: var(--al-color, #e74c3c);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+}
+
+.al-medida {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.al-medida-icono { font-size: 22px; flex-shrink: 0; line-height: 1.2; }
+.al-medida-texto { flex: 1; }
+.al-medida-texto strong { color: var(--al-color, #e74c3c); }
+
+.al-modal-cerrar {
+    width: 100%;
+    margin-top: 8px;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    background: var(--al-color, #e74c3c);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 0.2s, transform 0.15s;
+}
+.al-modal-cerrar:hover { filter: brightness(1.12); }
+.al-modal-cerrar:active { transform: scale(0.97); }
+
+/* ============================================================
+   9. LEYENDA DE NIVELES (mostrada en el modal de seguridad)
+   ============================================================ */
+.al-leyenda {
+    margin: 8px 0 18px;
+    padding: 12px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+}
+
+.al-leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.al-leyenda-item:last-child { border-bottom: none; }
+
+.al-leyenda-punto {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.al-leyenda-nombre { font-weight: 700; }
+.al-leyenda-desc { color: #bbb; font-size: 12px; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 600px) {
+    .al-panel { padding: 22px 16px 20px; }
+    .al-titulo { font-size: 21px; }
+    .al-icono { font-size: 70px; }
+    .al-icono-wrap { width: 90px; height: 90px; }
+    .al-contador { font-size: 26px; }
+    .al-btn { min-width: 100%; }
+    .al-botones { flex-direction: column; }
+
+    #al-tarjeta {
+        bottom: 14px;
+        right: 14px;
+        left: 14px;
+        width: auto;
+        max-width: none;
+    }
+
+    #al-barra-superior {
+        font-size: 12px;
+        padding: 8px 12px;
+        flex-wrap: wrap;
+    }
+    .al-barra-desc { white-space: normal; }
+    .al-barra-tiempo { display: none; }
+}
+
+/* Respetar preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    .al-panel,
+    .al-radar,
+    .al-rayo-svg,
+    .al-icono,
+    .al-mapa-rayo-svg,
+    #al-barra-superior,
+    .al-contador.al-critico {
+        animation: none !important;
+    }
+    #al-overlay.al-visible .al-panel { margin-top: 20px; }
+}
