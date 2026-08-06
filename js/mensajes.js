@@ -113,9 +113,11 @@ export function escucharMensajesPush() {
                         if (tiempoReferencia) {
                             const transcurrido = Date.now() - tiempoReferencia;
                             if (transcurrido < DURACION_ALERTA_MS) {
-                                // La alerta sigue activa → mostrarla con el tiempo restante
-                                const restanteMin = Math.ceil((DURACION_ALERTA_MS - transcurrido) / 60000);
-                                mostrarAlertaActiva(data, restanteMin);
+                                // La alerta sigue activa → mostrarla.
+                                // Se pasa la duración completa (15 min) y el
+                                // timestampInicio real; el contador sincronizado
+                                // calcula el tiempo restante por sí mismo.
+                                mostrarAlertaActiva(data, data.duracionMin || 15);
                                 return;
                             }
                         } else {
@@ -183,19 +185,23 @@ export function escucharMensajesPush() {
 
 /**
  * Muestra una alerta activa con todos los datos del documento Firestore.
+ * Pasa el timestampInicio real del documento para que el contador
+ * se sincronice entre todos los navegadores (llegue a cero al mismo
+ * tiempo que el del admin).
  * @param {object} data - datos del documento
  * @param {number} duracionMin - duración del timer en minutos
  */
 function mostrarAlertaActiva(data, duracionMin) {
     reproducirSonido();
     mostrarAlertaCompleta({
-        nivel:       data.nivel || "emergencia",
-        titulo:      data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
-        mensaje:     data.cuerpo || "",
-        distrito:    data.distrito || "",
-        intensidad:  data.intensidad || "",
-        lat:         (typeof data.lat === "number") ? data.lat : null,
-        lng:         (typeof data.lng === "number") ? data.lng : null,
-        duracionMin: duracionMin
+        nivel:           data.nivel || "emergencia",
+        titulo:          data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+        mensaje:         data.cuerpo || "",
+        distrito:        data.distrito || "",
+        intensidad:      data.intensidad || "",
+        lat:             (typeof data.lat === "number") ? data.lat : null,
+        lng:             (typeof data.lng === "number") ? data.lng : null,
+        duracionMin:     duracionMin,
+        timestampInicio: (typeof data.timestampInicio === "number") ? data.timestampInicio : null
     });
 }

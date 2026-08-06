@@ -173,31 +173,35 @@ async function consultarEstadoAlerta() {
                 if (tiempoRef) {
                     const transcurrido = Date.now() - tiempoRef;
                     if (transcurrido < DURACION_ALERTA_MS) {
-                        const restanteMin = Math.ceil((DURACION_ALERTA_MS - transcurrido) / 60000);
-                        // Mostrar la alerta activa
+                        // Mostrar la alerta activa.
+                        // Se pasa el timestampInicio REAL y la duración completa
+                        // (15 min) para que el contador se sincronice entre todos
+                        // los navegadores y llegue a cero al mismo tiempo.
                         mostrarAlertaCompleta({
-                            nivel:       data.nivel || "emergencia",
-                            titulo:      data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
-                            mensaje:     data.cuerpo || "",
-                            distrito:    data.distrito || "",
-                            intensidad:  data.intensidad || "",
-                            lat:         (typeof data.lat === "number") ? data.lat : null,
-                            lng:         (typeof data.lng === "number") ? data.lng : null,
-                            duracionMin: restanteMin
+                            nivel:           data.nivel || "emergencia",
+                            titulo:          data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+                            mensaje:         data.cuerpo || "",
+                            distrito:        data.distrito || "",
+                            intensidad:      data.intensidad || "",
+                            lat:             (typeof data.lat === "number") ? data.lat : null,
+                            lng:             (typeof data.lng === "number") ? data.lng : null,
+                            duracionMin:     data.duracionMin || 15,
+                            timestampInicio: timestampInicio
                         });
                         return;
                     }
                 } else {
-                    // Sin timestamp, mostrar la alerta igual
+                    // Sin timestamp, mostrar la alerta igual (contador local)
                     mostrarAlertaCompleta({
-                        nivel:       data.nivel || "emergencia",
-                        titulo:      data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
-                        mensaje:     data.cuerpo || "",
-                        distrito:    data.distrito || "",
-                        intensidad:  data.intensidad || "",
-                        lat:         (typeof data.lat === "number") ? data.lat : null,
-                        lng:         (typeof data.lng === "number") ? data.lng : null,
-                        duracionMin: 15
+                        nivel:           data.nivel || "emergencia",
+                        titulo:          data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+                        mensaje:         data.cuerpo || "",
+                        distrito:        data.distrito || "",
+                        intensidad:      data.intensidad || "",
+                        lat:             (typeof data.lat === "number") ? data.lat : null,
+                        lng:             (typeof data.lng === "number") ? data.lng : null,
+                        duracionMin:     data.duracionMin || 15,
+                        timestampInicio: fechaDoc
                     });
                     return;
                 }

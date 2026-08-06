@@ -302,6 +302,10 @@ export async function mostrarAlertaCompleta(datos = {}) {
         aplicarVars(document.getElementById("al-tarjeta"));
         aplicarVars(document.getElementById("al-modal-seguridad"));
 
+        // Quitar modo "libre" de barra y tarjeta (ahora son de alerta real)
+        document.getElementById("al-barra-superior")?.classList.remove("al-modo-libre");
+        document.getElementById("al-tarjeta")?.classList.remove("al-modo-libre");
+
         // ----- 1. BANNER A PANTALLA COMPLETA -----
         document.getElementById("al-icono-big").textContent = nivel.iconoBig;
         document.getElementById("al-nivel-badge").textContent = nivel.nombre;
@@ -347,17 +351,34 @@ export async function mostrarAlertaCompleta(datos = {}) {
             document.getElementById("al-tarjeta").classList.add("al-visible");
         }, 700);
 
-        // ----- 6. CONTADOR REGRESIVO -----
-        // Todas las alertas (amarillo, naranja, rojo) usan un timer
-        // de 15 minutos por defecto. Si se especifica duracionMin, se usa ese.
+        // ----- 6. CONTADOR REGRESIVO SINCRONIZADO -----
+        // El contador se sincroniza entre TODOS los navegadores usando
+        // el timestampInicio real del documento de Firestore que envió
+        // el admin. De este modo, todos los navegadores calculan el
+        // tiempo restante a partir del mismo instante y el contador
+        // llega a cero al mismo tiempo en todas partes.
+        //
+        // datos.timestampInicio = milisegundos (epoch) del momento en
+        //   que el admin emitió la alerta (guardado en Firestore).
+        // datos.duracionMin = duración total en minutos (15 por defecto).
         const duracionMin = (datos.duracionMin && datos.duracionMin > 0)
             ? datos.duracionMin
             : DURACION_TIMER_MINUTOS;
-        iniciarContador(duracionMin * 60);
+        const duracionMs = duracionMin * 60 * 1000;
+        const tsInicio = (typeof datos.timestampInicio === "number" && datos.timestampInicio > 0)
+            ? datos.timestampInicio
+            : Date.now(); // fallback: si no hay timestamp, usar ahora
+        iniciarContadorSincronizado(tsInicio, duracionMs);
 
         // ----- 7. MAPA ILUMINADO -----
+        // Si hay coordenadas exactas, iluminar ese punto.
+        // Si hay un distrito/zona, además buscar el punto real en el
+        // GeoJSON (lugares.json) y pintar el efecto del rayo sobre él.
         if (datos.lat != null && datos.lng != null) {
             iluminarMapa(datos.lat, datos.lng, nivelKey);
+        }
+        if (datos.distrito) {
+            iluminarZonaEnMapa(datos.distrito, nivelKey);
         }
 
         // ----- 7b. PINTAR POLÍGONO DE ZONA -----
@@ -431,6 +452,73 @@ function iniciarContador(segundosTotales) {
             el.classList.add("al-critico");
         }
     }, 1000);
+}
+
+// ----------------------------------------------------------
+// 6b. CONTADOR REGRESIVO SINCRONIZADO ENTRE NAVEGADORES
+// ----------------------------------------------------------
+// A diferencia de iniciarContador(), este usa un timestamp de
+// inicio REAL (el momento en que el admin emitió la alerta) en
+// lugar de Date.now() local. Así, todos los navegadores calculan
+// el tiempo restante a partir del mismo instante y el contador
+// llega a cero al mismo tiempo en todas partes.
+//
+// @param {number} timestampInicio - epoch ms del inicio de la alerta
+// @param {number} duracionMs - duración total en milisegundos
+function iniciarContadorSincronizado(timestampInicio, duracionMs) {
+    const el = document.getElementById("al-contador");
+    const wrap = document.getElementById("al-contador-wrap");
+    if (!el || !wrap) return;
+    wrap.style.display = "block";
+
+    const formatear = (s) => {
+        if (s < 0) s = 0;
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const seg = s % 60;
+        return [h, m, seg].map(v => String(v).padStart(2, "0")).join(":");
+    };
+
+    // Función que calcula el tiempo restante a partir del timestamp real
+    const calcularRestante = () => {
+        const ahora = Date.now();
+        const transcurrido = ahora - timestampInicio;
+        return Math.ceil((duracionMs - transcurrido) / 1000); // segundos restantes
+    };
+
+    // Limpieza de interval previo
+    if (intervalContador) { clearInterval(intervalContador); intervalContador = null; }
+
+    const actualizar = () => {
+        let restante = calcularRestante();
+        if (restante <= 0) {
+            el.textContent = "00:00:00";
+            el.classList.remove("al-critico");
+            clearInterval(intervalContador);
+            intervalContador = null;
+            // Cuando el contador llega a cero, la alerta expira:
+            // se restaura el estado "Libre de alertas" (verde persistente)
+            detenerSonidoAlerta();
+            // Pequeño retardo para que el usuario vea el 00:00:00
+            setTimeout(() => {
+                if (typeof mostrarAlertaLibre === "function") {
+                    mostrarAlertaLibre();
+                }
+            }, 1500);
+            return;
+        }
+        el.textContent = formatear(restante);
+        // Últimos 60 segundos: parpadeo crítico
+        if (restante <= 60) {
+            el.classList.add("al-critico");
+        } else {
+            el.classList.remove("al-critico");
+        }
+    };
+
+    // Actualización inmediata + intervalo de 1 segundo
+    actualizar();
+    intervalContador = setInterval(actualizar, 1000);
 }
 
 // ----------------------------------------------------------
@@ -548,6 +636,85 @@ async function pintarZonaEnMapa(nombreZona, color) {
 }
 
 // ----------------------------------------------------------
+// ILUMINAR ZONA EN EL MAPA (efecto del rayo sobre punto real)
+// ----------------------------------------------------------
+// Busca el punto real de la zona en el GeoJSON (lugares.json)
+// y pinta el efecto del rayo (círculos concéntricos + rayo SVG)
+// sobre ese punto.
+async function iluminarZonaEnMapa(nombreZona, nivelKey) {
+    try {
+        const mod = await obtenerModuloMapa();
+        if (mod && typeof mod.iluminarDistritoZona === "function") {
+            await mod.iluminarDistritoZona(nombreZona, nivelKey);
+        }
+    } catch (e) {
+        console.warn("alertas.js: error iluminando zona en mapa", e);
+    }
+}
+
+// ----------------------------------------------------------
+// MOSTRAR BARRA SUPERIOR + TARJETA "LIBRE DE ALERTAS" (verde persistente)
+// ----------------------------------------------------------
+// Esta función muestra SOLAMENTE la barra superior verde y la
+// tarjeta flotante verde indicando "LIBRE DE ALERTAS", SIN el
+// overlay a pantalla completa. Estas dos elementos se quedan
+// visibles permanentemente hasta que el admin lance una alerta
+// amarilla/naranja/roja (en cuyo caso se reemplazan por las del
+// nivel correspondiente).
+//
+// Se llama:
+//  - Al cerrar el banner del overlay (cerrarAlerta) si no hay
+//    alerta activa del admin.
+//  - Como parte de mostrarAlertaLibre() (junto con el overlay).
+export function mostrarBarraTarjetaLibre() {
+    try {
+        asegurarEstructuraDOM();
+
+        const nivel = NIVELES_ALERTA.vigilancia;
+
+        // Aplicar variables CSS del nivel verde a barra y tarjeta
+        const vars = [
+            ["--al-color", nivel.color],
+            ["--al-color-dark", nivel.colorDark],
+            ["--al-glow", nivel.glow]
+        ];
+        const aplicarVars = (el) => {
+            if (!el) return;
+            vars.forEach(([k, v]) => el.style.setProperty(k, v));
+        };
+
+        const barra = document.getElementById("al-barra-superior");
+        const tarjeta = document.getElementById("al-tarjeta");
+
+        aplicarVars(barra);
+        aplicarVars(tarjeta);
+
+        // Marcar barra y tarjeta como modo "libre" (verde persistente)
+        barra?.classList.add("al-modo-libre");
+        tarjeta?.classList.add("al-modo-libre");
+
+        // ----- BARRA SUPERIOR VERDE -----
+        document.getElementById("al-barra-icono").textContent = "✅";
+        document.getElementById("al-barra-nivel").textContent = "LIBRE DE ALERTAS";
+        document.getElementById("al-barra-desc").textContent = "Sistema en vigilancia — sin alertas activas";
+        document.getElementById("al-barra-tiempo").textContent = "Vigilancia";
+        barra?.classList.add("al-visible");
+
+        // ----- TARJETA FLOTANTE VERDE -----
+        document.getElementById("al-tarjeta-icono").textContent = "✅";
+        document.getElementById("al-tarjeta-sub").textContent = "VIGILANCIA";
+        document.getElementById("al-tarjeta-titulo").textContent = "Libre de alertas";
+        document.getElementById("al-tarjeta-cuerpo").innerHTML =
+            "<strong>🟢 Estado:</strong> Sin alertas meteorológicas<br>" +
+            "<strong>📍 Sistema:</strong> En vigilancia";
+        tarjeta?.classList.add("al-visible");
+
+    } catch (e) {
+        console.error("alertas.js: error al mostrar barra/tarjeta libre", e);
+    }
+}
+
+// ----------------------------------------------------------
 // MOSTRAR ESTADO "LIBRE DE ALERTAS" (verde por defecto)
 // ----------------------------------------------------------
 // Esta función muestra la notificación full-screen en verde
@@ -609,9 +776,11 @@ export function mostrarAlertaLibre() {
         void panel.offsetWidth;
         const overlay = document.getElementById("al-overlay");
         overlay.classList.add("al-visible", "al-libre");
-        // No mostrar barra superior ni tarjeta en estado libre
-        document.getElementById("al-barra-superior")?.classList.remove("al-visible");
-        document.getElementById("al-tarjeta")?.classList.remove("al-visible");
+
+        // Mostrar también la barra superior verde y la tarjeta flotante
+        // verde de forma persistente (se quedarán visibles después de que
+        // el usuario cierre el overlay, hasta que el admin lance una alerta)
+        mostrarBarraTarjetaLibre();
 
         // Enfocar el botón de cerrar
         setTimeout(() => document.getElementById("al-btn-cerrar")?.focus(), 1000);
@@ -711,20 +880,34 @@ function cerrarBanner() {
 }
 
 function ocultarBarraSuperior() {
-    document.getElementById("al-barra-superior")?.classList.remove("al-visible");
+    // En modo "libre" (verde persistente) la barra SIEMPRE se queda
+    // visible: el usuario no puede ocultarla manualmente.
+    const barra = document.getElementById("al-barra-superior");
+    if (barra?.classList.contains("al-modo-libre")) return;
+    barra?.classList.remove("al-visible");
     if (intervalTimestamp) { clearInterval(intervalTimestamp); intervalTimestamp = null; }
 }
 
 function ocultarTarjeta() {
-    document.getElementById("al-tarjeta")?.classList.remove("al-visible");
+    // En modo "libre" (verde persistente) la tarjeta SIEMPRE se queda
+    // visible: el usuario no puede ocultarla manualmente.
+    const tarjeta = document.getElementById("al-tarjeta");
+    if (tarjeta?.classList.contains("al-modo-libre")) return;
+    tarjeta?.classList.remove("al-visible");
 }
 
 export function cerrarAlerta() {
     cerrarBanner();
-    // La barra superior y la tarjeta permanecen como recordatorio
-    // (como en las páginas meteorológicas), pero se puede cerrar manualmente.
-    detenerIntervalos();
     detenerSonidoAlerta();
+    // NOTA: No se detienen los intervalos del contador aquí.
+    // El usuario cierra solo el overlay del banner, pero el
+    // contador sincronizado y la barra/tarjeta siguen visibles.
+    //
+    // Si no hay una alerta activa (estado libre), asegurar que
+    // la barra y tarjeta verdes persistentes se muestren.
+    if (!alertaActiva) {
+        mostrarBarraTarjetaLibre();
+    }
 }
 
 // Cierre total (limpia TODO: banner, barra, tarjeta, mapa, intervalos)
