@@ -432,3 +432,101 @@ function irA(lugar) {
     });
 
 }
+
+// ======================================================
+// PINTAR POLÍGONO DE ZONA CON COLOR DE ALERTA
+// ======================================================
+// Dado el nombre de una zona (ej: "Zona 1 - Campamentos")
+// y un color de nivel de alerta (hex), pinta el polígono
+// correspondiente en el mapa con ese color.
+// Los polígonos se cargan desde zonas.json.
+let zonasData = null;
+let poligonoZonaActivo = null;
+
+// Carga asíncrona de zonas.json (se cachea)
+async function cargarZonas() {
+    if (zonasData) return zonasData;
+    try {
+        const resp = await fetch("./zonas.json");
+        zonasData = await resp.json();
+        return zonasData;
+    } catch (e) {
+        console.warn("map.js: no se pudo cargar zonas.json", e);
+        return null;
+    }
+}
+
+/**
+ * Pinta el polígono de la zona indicada con el color del nivel de alerta.
+ * @param {string} nombreZona - Nombre completo de la zona (ej: "Zona 1 - Campamentos")
+ * @param {string} color - Color hex del nivel de alerta (ej: "#e74c3c")
+ * @returns {Promise<object|null>} Objeto con método detener() o null si no se encontró
+ */
+export async function pintarPoligonoZona(nombreZona, color = "#e74c3c") {
+    if (!map) return null;
+
+    // Limpiar polígono anterior si existe
+    limpiarPoligonosZona();
+
+    const data = await cargarZonas();
+    if (!data || !data.zonas) return null;
+
+    // Buscar la zona por nombre (coincidencia parcial o exacta)
+    const zona = data.zonas.find(z =>
+        z.nombre === nombreZona ||
+        z.nombreCorto === nombreZona ||
+        z.nombre.includes(nombreZona) ||
+        nombreZona.includes(z.nombreCorto)
+    );
+
+    if (!zona) {
+        console.warn("map.js: zona no encontrada:", nombreZona);
+        return null;
+    }
+
+    // Convertir coordenadas [lng, lat] a [lat, lng] para Leaflet
+    const latlngs = zona.poligono.map(coord => [coord[1], coord[0]]);
+
+    // Crear el polígono con el color de la alerta
+    poligonoZonaActivo = L.polygon(latlngs, {
+        color: color,
+        weight: 4,
+        opacity: 0.9,
+        fillColor: color,
+        fillOpacity: 0.3,
+        dashArray: "10 6"
+    }).addTo(map);
+
+    // Popup informativo
+    poligonoZonaActivo.bindPopup(
+        `<b>⚡ ${zona.nombre}</b><br>` +
+        `Zona bajo alerta meteorológica`
+    );
+
+    // Volar a la zona
+    if (zona.lat && zona.lng) {
+        map.flyTo([zona.lat, zona.lng], 13, { duration: 1.4 });
+    } else {
+        map.fitBounds(poligonoZonaActivo.getBounds(), { padding: [40, 40] });
+    }
+
+    return {
+        zona: zona,
+        poligono: poligonoZonaActivo,
+        detener() {
+            limpiarPoligonosZona();
+        }
+    };
+}
+
+/**
+ * Limpia/elimina el polígono de zona pintado actualmente.
+ */
+export function limpiarPoligonosZona() {
+    if (poligonoZonaActivo && map) {
+        try {
+            map.removeLayer(poligonoZonaActivo);
+        } catch (e) { /* no crítico */ }
+        poligonoZonaActivo = null;
+    }
+}
