@@ -1,6 +1,6 @@
 //======================================================
 // Buscador Lugares Antamina 2026
-// Archivo principalvigilancia
+// Archivo principal
 //======================================================
 
 import { cargarLugares } from "./data.js";
@@ -8,7 +8,7 @@ import { crearBuscador, teclado } from "./search.js";
 import { crearMapa } from "./map.js";
 import { inicializarFirebase } from "./notifications.js";
 import { escucharMensajesPush } from "./mensajes.js";
-import { mostrarAlertaCompleta, cerrarAlertaTotal } from "./alertas.js";
+import { mostrarAlertaCompleta, cerrarAlertaTotal, mostrarAlertaLibre } from "./alertas.js";
 
 //======================================================
 // Referencias HTML
@@ -122,52 +122,99 @@ function cambiarColorFondo(texto) {
 }
 
 //======================================================
-// Botón de prueba del Sistema de Alerta Meteorológica
-// Simula la recepción de una alerta para verificar los
-// 12 efectos visuales. Se puede eliminar en producción.
+// Botón "Consultar alerta meteorológica"
+// Al presionar, consulta el estado actual de las alertas.
+// Si el admin ha emitido una alerta activa (dentro de los 15
+// minutos), la muestra. Si no hay alerta activa, muestra
+// "Libre de alertas" (verde por defecto).
 //======================================================
 
-function configurarBotonPrueba() {
+function configurarBotonConsulta() {
 
     const btn = document.getElementById("btn-test-alerta");
 
     if (!btn) return;
 
-    let nivelIndex = 0;
-    const niveles = ["vigilancia", "precaucion", "alerta", "emergencia"];
-    const titulos = {
-        vigilancia:  "🌩️ LIBRE DE ALERTAS",
-        precaucion:  "⚡ PRECAUCIÓN: ACTIVIDAD ELÉCTRICA",
-        alerta:      "⚡ ALERTA DE TORMENTA ELÉCTRICA",
-        emergencia:  "⚡ ALERTA ROJA: TORMENTA ELÉCTRICA INTENSA"
-    };
-    const mensajes = {
-        vigilancia:  "No se registran alertas activas por tormenta eléctrica. Puede continuar con sus actividades con normalidad.",
-        precaucion:  "Posibles descargas eléctricas detectadas en las proximidades.",
-        alerta:      "Se detectó actividad eléctrica intensa en el distrito de Yanacancha.",
-        emergencia:  "Tormenta eléctrica severa sobre el distrito de Yanacancha. Descargas frecuentes."
-    };
-
     btn.addEventListener("click", () => {
-        const nivel = niveles[nivelIndex % niveles.length];
-        nivelIndex++;
-
-        // Usar coordenadas reales de un lugar de Antamina (Yanacancha)
-        mostrarAlertaCompleta({
-            nivel: nivel,
-            titulo: titulos[nivel],
-            mensaje: mensajes[nivel],
-            distrito: "Yanacancha",
-            intensidad: nivel === "emergencia" ? "Muy alta" : nivel === "alerta" ? "Alta" : "Moderada",
-            lat: -9.574987,
-            lng: -77.029009,
-            duracionMin: nivel === "emergencia" ? 15 : nivel === "alerta" ? 30 : 45
-        });
+        // Consultar el estado actual: re-verificar Firestore
+        // al forzar una nueva carga inicial
+        consultarEstadoAlerta();
     });
 
 }
 
-configurarBotonPrueba();
+// Consulta el estado actual de las alertas desde Firestore
+async function consultarEstadoAlerta() {
+    try {
+        // Importar Firestore dinámicamente
+        const { getFirestore, collection, query, orderBy, limit, getDocs } =
+            await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js");
+        const { obtenerApp } = await import("./firebase-app.js");
+
+        const db = getFirestore(obtenerApp());
+        const ref = collection(db, "mensajes_push");
+        const q = query(ref, orderBy("fecha", "desc"), limit(1));
+        const snapshot = await getDocs(q);
+
+        const DURACION_ALERTA_MS = 15 * 60 * 1000;
+
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            const data = doc.data();
+            const esAlerta = data.tipo === "alerta" ||
+                (data.nivel && data.nivel !== "normal" && data.nivel !== "vigilancia");
+
+            if (esAlerta) {
+                // Verificar si está dentro de los 15 minutos
+                const timestampInicio = data.timestampInicio || null;
+                const fechaDoc = data.fecha?.toMillis?.() || null;
+                let tiempoRef = timestampInicio || fechaDoc;
+
+                if (tiempoRef) {
+                    const transcurrido = Date.now() - tiempoRef;
+                    if (transcurrido < DURACION_ALERTA_MS) {
+                        const restanteMin = Math.ceil((DURACION_ALERTA_MS - transcurrido) / 60000);
+                        // Mostrar la alerta activa
+                        mostrarAlertaCompleta({
+                            nivel:       data.nivel || "emergencia",
+                            titulo:      data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+                            mensaje:     data.cuerpo || "",
+                            distrito:    data.distrito || "",
+                            intensidad:  data.intensidad || "",
+                            lat:         (typeof data.lat === "number") ? data.lat : null,
+                            lng:         (typeof data.lng === "number") ? data.lng : null,
+                            duracionMin: restanteMin
+                        });
+                        return;
+                    }
+                } else {
+                    // Sin timestamp, mostrar la alerta igual
+                    mostrarAlertaCompleta({
+                        nivel:       data.nivel || "emergencia",
+                        titulo:      data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+                        mensaje:     data.cuerpo || "",
+                        distrito:    data.distrito || "",
+                        intensidad:  data.intensidad || "",
+                        lat:         (typeof data.lat === "number") ? data.lat : null,
+                        lng:         (typeof data.lng === "number") ? data.lng : null,
+                        duracionMin: 15
+                    });
+                    return;
+                }
+            }
+        }
+
+        // No hay alerta activa → mostrar "Libre de alertas"
+        mostrarAlertaLibre();
+
+    } catch (e) {
+        console.warn("app.js: error consultando estado de alerta", e);
+        // En caso de error, mostrar "Libre de alertas" como fallback
+        mostrarAlertaLibre();
+    }
+}
+
+configurarBotonConsulta();
 
 //======================================================
 
