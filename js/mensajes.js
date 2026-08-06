@@ -17,10 +17,13 @@
 
 import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { obtenerApp } from "./firebase-app.js";
-import { mostrarToast, reproducirSonido } from "./notifications.js";
-import { mostrarAlertaCompleta } from "./alertas.js";
+import { mostrarToast, reproducirSonido, reproducirSonidoAlerta } from "./notifications.js";
+import { mostrarAlertaCompleta, mostrarAlertaLibre } from "./alertas.js";
 
 const NOMBRE_COLECCION = "mensajes_push";
+
+// Duración máxima de una alerta activa (15 minutos en milisegundos)
+const DURACION_ALERTA_MS = 15 * 60 * 1000;
 
 let db = null;
 let yaEscuchando = false;
@@ -54,7 +57,14 @@ export async function enviarMensajePush(titulo, cuerpo, datosAlerta = null) {
     };
     // Si vienen datos de alerta, incluirlos para que los navegadores
     // puedan mostrar el sistema de alerta completo.
+    // Todas las alertas tienen un timer de 15 minutos por defecto.
     if (datosAlerta) {
+        // Forzar duracionMin a 15 si no se especifica
+        if (!datosAlerta.duracionMin || datosAlerta.duracionMin <= 0) {
+            datosAlerta.duracionMin = 15;
+        }
+        // Agregar timestamp de inicio para calcular si la alerta sigue activa
+        datosAlerta.timestampInicio = Date.now();
         Object.assign(doc, datosAlerta);
     }
     await addDoc(ref, doc);
@@ -64,7 +74,14 @@ export async function enviarMensajePush(titulo, cuerpo, datosAlerta = null) {
  * Escucha en tiempo real los mensajes nuevos y muestra un toast +
  * notificación nativa (si hay permiso) a TODOS los navegadores con
  * la página abierta.
- * Debe llamarse una sola vez al iniciar la app (index.html y admin.html).
+ *
+ * NUEVA LÓGICA:
+ * - Al cargar la página (primeraCarga), verifica si hay una alerta
+ *   activa dentro de los 15 minutos. Si la hay, la muestra; si no,
+ *   muestra "Libre de alertas" (verde).
+ * - Cuando llega un mensaje NUEVO (cambio del admin), lo procesa:
+ *   - Si es alerta: muestra la alerta completa con timer de 15 min.
+ *   - Si es mensaje normal: muestra toast simple.
  */
 export function escucharMensajesPush() {
     if (yaEscuchando) return;
@@ -76,12 +93,45 @@ export function escucharMensajesPush() {
         const q = query(ref, orderBy("fecha", "desc"), limit(1));
 
         onSnapshot(q, (snapshot) => {
-            // Ignorar la carga inicial (mensajes ya existentes al abrir la página)
+            // PRIMERA CARGA: verificar si hay alerta activa
             if (primeraCarga) {
                 primeraCarga = false;
+
+                // Revisar el documento más reciente para ver si es una alerta activa
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0];
+                    const data = doc.data();
+                    const esAlerta = data.tipo === "alerta" ||
+                        (data.nivel && data.nivel !== "normal" && data.nivel !== "vigilancia");
+
+                    if (esAlerta) {
+                        // Verificar si la alerta está dentro de los 15 minutos
+                        const timestampInicio = data.timestampInicio || null;
+                        const fechaDoc = data.fecha?.toMillis?.() || null;
+                        let tiempoReferencia = timestampInicio || fechaDoc;
+
+                        if (tiempoReferencia) {
+                            const transcurrido = Date.now() - tiempoReferencia;
+                            if (transcurrido < DURACION_ALERTA_MS) {
+                                // La alerta sigue activa → mostrarla con el tiempo restante
+                                const restanteMin = Math.ceil((DURACION_ALERTA_MS - transcurrido) / 60000);
+                                mostrarAlertaActiva(data, restanteMin);
+                                return;
+                            }
+                        } else {
+                            // Sin timestamp, asumir activa (compatibilidad)
+                            mostrarAlertaActiva(data, 15);
+                            return;
+                        }
+                    }
+                }
+
+                // No hay alerta activa → mostrar "Libre de alertas"
+                mostrarAlertaLibre();
                 return;
             }
 
+            // CAMBIOS POSTERIORES (nuevos mensajes del admin)
             snapshot.docChanges().forEach((cambio) => {
                 if (cambio.type === "added") {
                     const data = cambio.doc.data();
@@ -89,22 +139,13 @@ export function escucharMensajesPush() {
                     const cuerpo = data.cuerpo || "";
 
                     // ¿Es una ALERTA METEOROLÓGICA?
-                    // Lo es si tiene campo "tipo" === "alerta" o si tiene "nivel".
-                    const esAlerta = data.tipo === "alerta" || (data.nivel && data.nivel !== "normal");
+                    const esAlerta = data.tipo === "alerta" ||
+                        (data.nivel && data.nivel !== "normal" && data.nivel !== "vigilancia");
 
                     if (esAlerta) {
                         // --- Sistema de alerta completo (12 efectos) ---
-                        reproducirSonido();
-                        mostrarAlertaCompleta({
-                            nivel:    data.nivel || "emergencia",
-                            titulo:   titulo,
-                            mensaje:  cuerpo,
-                            distrito: data.distrito || "",
-                            intensidad: data.intensidad || "",
-                            lat:      (typeof data.lat === "number") ? data.lat : null,
-                            lng:      (typeof data.lng === "number") ? data.lng : null,
-                            duracionMin: (typeof data.duracionMin === "number") ? data.duracionMin : null
-                        });
+                        // El timer se resetea a 15 minutos (lo maneja mostrarAlertaCompleta)
+                        mostrarAlertaActiva(data, data.duracionMin || 15);
                     } else {
                         // --- Mensaje normal: toast simple (comportamiento original) ---
                         mostrarToast(titulo, cuerpo, "alerta", true);
@@ -126,9 +167,35 @@ export function escucharMensajesPush() {
             });
         }, (error) => {
             console.error("Error escuchando mensajes:", error);
+            // En caso de error, mostrar "Libre de alertas" como fallback
+            try {
+                mostrarAlertaLibre();
+            } catch (e) { /* no crítico */ }
         });
 
     } catch (error) {
         console.error("No se pudo iniciar la escucha de mensajes:", error);
+        try {
+            mostrarAlertaLibre();
+        } catch (e) { /* no crítico */ }
     }
+}
+
+/**
+ * Muestra una alerta activa con todos los datos del documento Firestore.
+ * @param {object} data - datos del documento
+ * @param {number} duracionMin - duración del timer en minutos
+ */
+function mostrarAlertaActiva(data, duracionMin) {
+    reproducirSonido();
+    mostrarAlertaCompleta({
+        nivel:       data.nivel || "emergencia",
+        titulo:      data.titulo || "⚡ ALERTA DE TORMENTA ELÉCTRICA",
+        mensaje:     data.cuerpo || "",
+        distrito:    data.distrito || "",
+        intensidad:  data.intensidad || "",
+        lat:         (typeof data.lat === "number") ? data.lat : null,
+        lng:         (typeof data.lng === "number") ? data.lng : null,
+        duracionMin: duracionMin
+    });
 }
