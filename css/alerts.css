@@ -711,3 +711,109 @@
     }
     #al-overlay.al-visible .al-panel { margin-top: 20px; }
 }
+
+/* ============================================================
+   ESTADO "LIBRE DE ALERTAS" (verde / vigilancia por defecto)
+   ============================================================
+   Cuando el usuario abre la página o consulta y no hay alertas
+   activas emitidas por el administrador, se muestra una
+   notificación full-screen en verde indicando "LIBRE DE
+   ALERTAS". Es un estado informativo: sin flash, sin sirena,
+   sin contador, sin barra superior ni tarjeta flotante.
+   Las variables CSS --al-color / --al-color-dark / --al-glow
+   ya se aplican dinámicamente en verde desde alertas.js
+   (mostrarAlertaLibre), pero estas reglas aseguran que el
+   panel tenga un aspecto sereno y claramente "seguro". */
+
+/* Overlay más suave para el estado libre (menos opresivo) */
+#al-overlay.al-libre {
+    background: rgba(20, 60, 35, 0.45);
+    backdrop-filter: blur(2px);
+}
+
+/* Panel verde: fondo con tono verde, sin resplandor agresivo */
+#al-overlay.al-libre .al-panel {
+    background: linear-gradient(160deg, #1a4d2e 0%, #0d3520 100%);
+    border: 2px solid var(--al-color, #2ecc71);
+    box-shadow:
+        0 0 40px var(--al-glow, rgba(46, 204, 113, 0.6)),
+        0 0 80px rgba(46, 204, 113, 0.3),
+        inset 0 0 30px rgba(46, 204, 113, 0.08);
+}
+
+/* Sin animación de sirena en estado libre */
+#al-overlay.al-libre .al-panel.al-sirena-activa {
+    animation: none;
+    border-color: var(--al-color, #2ecc71);
+}
+
+/* Badge de nivel verde */
+#al-overlay.al-libre .al-nivel-badge {
+    background: var(--al-color, #2ecc71);
+    color: #0d3520;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 18px var(--al-glow, rgba(46, 204, 113, 0.6));
+}
+
+/* Icono grande con aura verde tranquila (sin parpadeo intenso) */
+#al-overlay.al-libre .al-icono {
+    color: var(--al-color, #2ecc71);
+    text-shadow:
+        0 0 20px var(--al-glow, rgba(46, 204, 113, 0.7)),
+        0 0 40px rgba(46, 204, 113, 0.4);
+    animation: al-pulso-verde 3s ease-in-out infinite;
+}
+
+@keyframes al-pulso-verde {
+    0%, 100% { transform: scale(1); opacity: 0.95; }
+    50%      { transform: scale(1.06); opacity: 1; }
+}
+
+/* Anillos de radar en verde y más lentos (tranquilidad) */
+#al-overlay.al-libre .al-radar {
+    border-color: var(--al-color, #2ecc71);
+    animation: al-radar-pulso 2.2s ease-out infinite;
+}
+#al-overlay.al-libre .al-radar.r2 { animation-delay: 0.7s; }
+#al-overlay.al-libre .al-radar.r3 { animation-delay: 1.4s; }
+
+/* Ocultar el rayo SVG en estado libre (no hay tormenta) */
+#al-overlay.al-libre .al-rayo-svg {
+    display: none;
+}
+
+/* Título en verde claro */
+#al-overlay.al-libre .al-titulo {
+    color: var(--al-color, #2ecc71);
+    text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+}
+
+/* Mensaje y recomendación con tono sereno */
+#al-overlay.al-libre .al-mensaje,
+#al-overlay.al-libre .al-recomendacion {
+    color: #c8f0d4;
+}
+
+/* Botones con estilo verde "todo en orden" */
+#al-overlay.al-libre .al-btn-primario {
+    background: var(--al-color, #2ecc71);
+    color: #0d3520;
+    border-color: var(--al-color-dark, #27ae60);
+}
+#al-overlay.al-libre .al-btn-primario:hover {
+    background: var(--al-color-dark, #27ae60);
+    color: #fff;
+}
+#al-overlay.al-libre .al-btn-secundario {
+    border-color: var(--al-color, #2ecc71);
+    color: var(--al-color, #2ecc71);
+}
+#al-overlay.al-libre .al-btn-cerrar {
+    background: rgba(46, 204, 113, 0.15);
+    border-color: var(--al-color, #2ecc71);
+    color: var(--al-color, #2ecc71);
+}
+#al-overlay.al-libre .al-btn-cerrar:hover {
+    background: var(--al-color, #2ecc71);
+    color: #0d3520;
+}
