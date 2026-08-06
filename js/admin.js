@@ -230,20 +230,22 @@ tipoSelector?.addEventListener("change", () => {
 // Escuchar cambios de nivel
 selectNivel?.addEventListener("change", actualizarNivelPreview);
 
-// Botón para rellenar coordenadas de un lugar conocido de Antamina
-// (facilita pruebas sin buscar coordenadas manualmente)
+// Rellenar coordenadas automáticamente según la zona seleccionada.
+// Las 3 zonas oficiales de Antamina tienen coordenadas predefinidas
+// que coinciden con los polígonos de zonas.json, de modo que el mapa
+// ilumine el área correcta al emitir la alerta.
+const COORDENADAS_ZONAS = {
+    "Zona 1 - Campamentos":   { lat: -9.579, lng: -77.027 },
+    "Zona 2 - Botadero Este": { lat: -9.580, lng: -77.040 },
+    "Zona 3 - Tucush":        { lat: -9.520, lng: -77.050 }
+};
+
 inputDistrito?.addEventListener("change", () => {
-    // Sugerir coordenadas si el distrito coincide con lugares conocidos
-    const sugerencias = {
-        "yanacancha":    { lat: -9.574987, lng: -77.029009 },
-        "san marcos":    { lat: -9.55,     lng: -77.08 },
-        "huallacocha":   { lat: -9.607721, lng: -77.026847 },
-        "huincush":      { lat: -9.5672,   lng: -77.009224 }
-    };
-    const key = inputDistrito.value.trim().toLowerCase();
-    if (sugerencias[key] && !inputLat.value && !inputLng.value) {
-        inputLat.value = sugerencias[key].lat;
-        inputLng.value = sugerencias[key].lng;
+    const zona = inputDistrito.value;
+    const coords = COORDENADAS_ZONAS[zona];
+    if (coords) {
+        inputLat.value = coords.lat;
+        inputLng.value = coords.lng;
     }
 });
 
