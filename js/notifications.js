@@ -124,6 +124,47 @@ export function reproducirSonido() {
 }
 
 // ======================================================
+// Sonido de alerta en LOOP (30 segundos por defecto)
+// ======================================================
+// Reproduce el sonido de notificación repetidamente durante
+// los segundos indicados. Se usa para las alertas meteorológicas
+// (amarillo, naranja, rojo) según los nuevos requerimientos.
+let intervalSonidoAlerta = null;
+
+/**
+ * Reproduce el sonido de alerta en bucle durante `duracionSeg` segundos.
+ * Por defecto 30 segundos. Detiene automáticamente al terminar.
+ * @param {number} duracionSeg - duración total del loop en segundos
+ */
+export function reproducirSonidoAlerta(duracionSeg = 30) {
+    // Detener cualquier loop previo
+    detenerSonidoAlerta();
+
+    // Reproducir inmediatamente la primera vez
+    reproducirSonido();
+
+    // Repetir cada 2 segundos (el beep dura ~0.6s, hay 1.4s de silencio)
+    intervalSonidoAlerta = setInterval(() => {
+        reproducirSonido();
+    }, 2000);
+
+    // Detener automáticamente después de duracionSeg
+    setTimeout(() => {
+        detenerSonidoAlerta();
+    }, duracionSeg * 1000);
+}
+
+/**
+ * Detiene el loop de sonido de alerta inmediatamente.
+ */
+export function detenerSonidoAlerta() {
+    if (intervalSonidoAlerta) {
+        clearInterval(intervalSonidoAlerta);
+        intervalSonidoAlerta = null;
+    }
+}
+
+// ======================================================
 // Popups / Toasts visuales
 // ======================================================
 
