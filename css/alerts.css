@@ -817,3 +817,122 @@
     background: var(--al-color, #2ecc71);
     color: #0d3520;
 }
+
+/* ============================================================
+   MODO "LIBRE" — Barra superior + Tarjeta verde PERSISTENTE
+   ============================================================
+   Cuando no hay alertas activas (estado de vigilancia por defecto),
+   la barra superior y la tarjeta flotante se muestran en verde de
+   forma permanente. La clase .al-modo-libre se aplica a ambos
+   elementos desde alertas.js (mostrarBarraTarjetaLibre) y se
+   quita cuando el admin lanza una alerta real (amarilla/naranja/roja).
+   Estas dos piezas SIEMPRE están visibles hasta que llega una
+   alerta, en cuyo caso se reemplazan por las del nivel correspondiente. */
+
+/* --- BARRA SUPERIOR VERDE PERSISTENTE --- */
+#al-barra-superior.al-modo-libre {
+    background: linear-gradient(90deg, #1a4d2e 0%, #0d3520 50%, #1a4d2e 100%);
+    border-bottom: 2px solid var(--al-color, #2ecc71);
+    box-shadow: 0 2px 20px rgba(46, 204, 113, 0.4);
+}
+
+#al-barra-superior.al-modo-libre .al-barra-icono {
+    color: var(--al-color, #2ecc71);
+    text-shadow: 0 0 12px var(--al-glow, rgba(46, 204, 113, 0.6));
+    animation: al-pulso-verde 3s ease-in-out infinite;
+}
+
+#al-barra-superior.al-modo-libre .al-barra-nivel {
+    color: var(--al-color, #2ecc71);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(46, 204, 113, 0.3);
+}
+
+#al-barra-superior.al-modo-libre .al-barra-desc {
+    color: #c8f0d4;
+}
+
+#al-barra-superior.al-modo-libre .al-barra-tiempo {
+    color: #8fd9a8;
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+#al-barra-superior.al-modo-libre .al-barra-cerrar {
+    color: #8fd9a8;
+    border-color: rgba(46, 204, 113, 0.3);
+}
+
+#al-barra-superior.al-modo-libre .al-barra-cerrar:hover {
+    background: rgba(46, 204, 113, 0.2);
+    color: #fff;
+}
+
+/* --- TARJETA FLOTANTE VERDE PERSISTENTE --- */
+#al-tarjeta.al-modo-libre {
+    background: linear-gradient(160deg, #1a4d2e 0%, #0d3520 100%);
+    border: 2px solid var(--al-color, #2ecc71);
+    box-shadow:
+        0 4px 30px rgba(46, 204, 113, 0.35),
+        0 0 15px rgba(46, 204, 113, 0.2);
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-icono {
+    color: var(--al-color, #2ecc71);
+    text-shadow: 0 0 15px var(--al-glow, rgba(46, 204, 113, 0.6));
+    animation: al-pulso-verde 3s ease-in-out infinite;
+}
+
+/* Sin el anillo de alerta parpadeante en modo libre */
+#al-tarjeta.al-modo-libre .al-tarjeta-icono::after {
+    display: none;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-sub {
+    color: var(--al-color, #2ecc71);
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-titulo {
+    color: #e0f5e8;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-cuerpo {
+    color: #c8f0d4;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-cuerpo strong {
+    color: var(--al-color, #2ecc71);
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-btn {
+    background: var(--al-color, #2ecc71);
+    color: #0d3520;
+    border-color: var(--al-color-dark, #27ae60);
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-btn:hover {
+    background: var(--al-color-dark, #27ae60);
+    color: #fff;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-cerrar {
+    color: #8fd9a8;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-cerrar:hover {
+    background: rgba(46, 204, 113, 0.2);
+    color: #fff;
+}
+
+/* Ocultar botones de cerrar en modo libre (siempre visibles) */
+#al-barra-superior.al-modo-libre .al-barra-cerrar {
+    display: none;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-cerrar {
+    display: none;
+}
+
+#al-tarjeta.al-modo-libre .al-tarjeta-btn {
+    display: none;
+}
