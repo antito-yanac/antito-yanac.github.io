@@ -21,6 +21,9 @@
 // 12. Botones de acción destacados
 // ============================================================
 
+// Importar funciones de sonido para el loop de 30 segundos
+import { reproducirSonidoAlerta, detenerSonidoAlerta } from "./notifications.js";
+
 // ----------------------------------------------------------
 // Definición de niveles de alerta (característica #9)
 // ----------------------------------------------------------
@@ -130,6 +133,11 @@ let intervalRayoMapa = null;
 let tiempoInicioAlerta = null;
 let capaMapaAlerta = null;   // capa Leaflet del círculo + rayo
 let mapaRef = null;          // referencia al mapa Leaflet
+
+// ----------------------------------------------------------
+// DURACIÓN DEL TIMER DE ALERTA (15 minutos por defecto)
+// ----------------------------------------------------------
+const DURACION_TIMER_MINUTOS = 15;
 
 // ----------------------------------------------------------
 // Inyección del HTML base (contenedores) en el DOM
@@ -307,11 +315,10 @@ export async function mostrarAlertaCompleta(datos = {}) {
         panel.classList.remove("al-resplandor-activo", "al-sirena-activa");
         void panel.offsetWidth; // forzar reflow
 
-        // Mostrar overlay
+        // Mostrar overlay (estado de alerta real: quitar clase "libre")
         const overlay = document.getElementById("al-overlay");
+        overlay.classList.remove("al-libre");
         overlay.classList.add("al-visible");
-
-        // Activar resplandor periódico + sirena (característica #8)
         panel.classList.add("al-sirena-activa");
 
         // ----- 2. FLASH DE FONDO (solo en entrada, no repetitivo) -----
@@ -341,13 +348,30 @@ export async function mostrarAlertaCompleta(datos = {}) {
         }, 700);
 
         // ----- 6. CONTADOR REGRESIVO -----
-        if (datos.duracionMin && datos.duracionMin > 0) {
-            iniciarContador(datos.duracionMin * 60);
-        }
+        // Todas las alertas (amarillo, naranja, rojo) usan un timer
+        // de 15 minutos por defecto. Si se especifica duracionMin, se usa ese.
+        const duracionMin = (datos.duracionMin && datos.duracionMin > 0)
+            ? datos.duracionMin
+            : DURACION_TIMER_MINUTOS;
+        iniciarContador(duracionMin * 60);
 
         // ----- 7. MAPA ILUMINADO -----
         if (datos.lat != null && datos.lng != null) {
             iluminarMapa(datos.lat, datos.lng, nivelKey);
+        }
+
+        // ----- 7b. PINTAR POLÍGONO DE ZONA -----
+        // Si se especifica un distrito/zona, pintar el polígono con el color de la alerta
+        if (datos.distrito) {
+            pintarZonaEnMapa(datos.distrito, nivel.color);
+        }
+
+        // ----- SONIDO EN LOOP (30 segundos) -----
+        // Las alertas amarilla, naranja y roja reproducen sonido en loop por 30 segundos
+        if (nivelKey !== "vigilancia") {
+            try {
+                reproducirSonidoAlerta(30);
+            } catch (e) { /* no crítico */ }
         }
 
         // Enfocar el botón de cerrar para accesibilidad
@@ -510,6 +534,94 @@ function limpiarMapaAlerta() {
 }
 
 // ----------------------------------------------------------
+// PINTAR POLÍGONO DE ZONA EN EL MAPA
+// ----------------------------------------------------------
+async function pintarZonaEnMapa(nombreZona, color) {
+    try {
+        const mod = await obtenerModuloMapa();
+        if (mod && typeof mod.pintarPoligonoZona === "function") {
+            await mod.pintarPoligonoZona(nombreZona, color);
+        }
+    } catch (e) {
+        console.warn("alertas.js: error pintando zona", e);
+    }
+}
+
+// ----------------------------------------------------------
+// MOSTRAR ESTADO "LIBRE DE ALERTAS" (verde por defecto)
+// ----------------------------------------------------------
+// Esta función muestra la notificación full-screen en verde
+// indicando que no hay alertas activas. Se muestra al cargar
+// la página y cuando el usuario consulta sin que el admin haya
+// emitido ninguna alerta.
+export function mostrarAlertaLibre() {
+    try {
+        asegurarEstructuraDOM();
+        detenerIntervalos();
+        limpiarMapaAlerta();
+        detenerSonidoAlerta();
+
+        // Limpiar polígonos de zona
+        obtenerModuloMapa().then(mod => {
+            if (mod && typeof mod.limpiarPoligonosZona === "function") {
+                mod.limpiarPoligonosZona();
+            }
+        }).catch(() => {});
+
+        alertaActiva = false;
+        tiempoInicioAlerta = null;
+
+        const nivel = NIVELES_ALERTA.vigilancia;
+
+        // Aplicar variables CSS del nivel verde
+        const vars = [
+            ["--al-color", nivel.color],
+            ["--al-color-dark", nivel.colorDark],
+            ["--al-glow", nivel.glow]
+        ];
+        const aplicarVars = (el) => {
+            if (!el) return;
+            vars.forEach(([k, v]) => el.style.setProperty(k, v));
+        };
+        aplicarVars(document.getElementById("al-overlay"));
+        aplicarVars(document.getElementById("al-panel"));
+        aplicarVars(document.getElementById("al-barra-superior"));
+        aplicarVars(document.getElementById("al-tarjeta"));
+        aplicarVars(document.getElementById("al-modal-seguridad"));
+
+        // Configurar contenido para "Libre de alertas"
+        document.getElementById("al-icono-big").textContent = "✅";
+        document.getElementById("al-nivel-badge").textContent = "VIGILANCIA";
+        document.getElementById("al-nivel-badge").style.background = nivel.color;
+        document.getElementById("al-titulo-texto").textContent = "🟢 LIBRE DE ALERTAS";
+        document.getElementById("al-mensaje-texto").textContent =
+            "No se han emitido alertas meteorológicas. El sistema se encuentra en vigilancia.";
+        document.getElementById("al-recomendacion-texto").textContent =
+            "Manténgase informado sobre el desarrollo del clima.";
+
+        // Ocultar contador (no hay timer en estado libre)
+        const wrap = document.getElementById("al-contador-wrap");
+        if (wrap) wrap.style.display = "none";
+
+        // Mostrar overlay con clase de estado libre (verde sereno)
+        const panel = document.getElementById("al-panel");
+        panel.classList.remove("al-resplandor-activo", "al-sirena-activa");
+        void panel.offsetWidth;
+        const overlay = document.getElementById("al-overlay");
+        overlay.classList.add("al-visible", "al-libre");
+        // No mostrar barra superior ni tarjeta en estado libre
+        document.getElementById("al-barra-superior")?.classList.remove("al-visible");
+        document.getElementById("al-tarjeta")?.classList.remove("al-visible");
+
+        // Enfocar el botón de cerrar
+        setTimeout(() => document.getElementById("al-btn-cerrar")?.focus(), 1000);
+
+    } catch (e) {
+        console.error("alertas.js: error al mostrar alerta libre", e);
+    }
+}
+
+// ----------------------------------------------------------
 // 12. BOTONES DE ACCIÓN
 // ----------------------------------------------------------
 function verMapaAlerta() {
@@ -593,7 +705,9 @@ function cerrarModalSeguridad() {
 // CERRAR ALERTA
 // ----------------------------------------------------------
 function cerrarBanner() {
-    document.getElementById("al-overlay")?.classList.remove("al-visible");
+    const overlay = document.getElementById("al-overlay");
+    overlay?.classList.remove("al-visible");
+    overlay?.classList.remove("al-libre");
 }
 
 function ocultarBarraSuperior() {
@@ -610,6 +724,7 @@ export function cerrarAlerta() {
     // La barra superior y la tarjeta permanecen como recordatorio
     // (como en las páginas meteorológicas), pero se puede cerrar manualmente.
     detenerIntervalos();
+    detenerSonidoAlerta();
 }
 
 // Cierre total (limpia TODO: banner, barra, tarjeta, mapa, intervalos)
@@ -619,7 +734,14 @@ export function cerrarAlertaTotal() {
     ocultarTarjeta();
     cerrarModalSeguridad();
     detenerIntervalos();
+    detenerSonidoAlerta();
     limpiarMapaAlerta();
+    // Limpiar polígonos de zona
+    obtenerModuloMapa().then(mod => {
+        if (mod && typeof mod.limpiarPoligonosZona === "function") {
+            mod.limpiarPoligonosZona();
+        }
+    }).catch(() => {});
     alertaActiva = false;
 }
 
