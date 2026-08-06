@@ -610,26 +610,8 @@ export function mostrarAlertaLibre() {
         const overlay = document.getElementById("al-overlay");
         overlay.classList.add("al-visible", "al-libre");
         // No mostrar barra superior ni tarjeta en estado libre
-        const barra = document.getElementById("al-barra-superior");
-        const tarjeta = document.getElementById("al-tarjeta");
-
-        // Barra superior
-        document.getElementById("al-barra-icono").textContent = "🟢";
-        document.getElementById("al-barra-nivel").textContent = "VIGILANCIA";
-        document.getElementById("al-barra-desc").textContent = "Libre de alertas";
-        document.getElementById("al-barra-tiempo").textContent = "Estado actual";
-        barra.classList.add("al-visible");
-        
-        // Tarjeta flotante
-        document.getElementById("al-tarjeta-icono").textContent = "🟢";
-        document.getElementById("al-tarjeta-sub").textContent = "VIGILANCIA";
-        document.getElementById("al-tarjeta-titulo").textContent = "Libre de alertas";
-        document.getElementById("al-tarjeta-cuerpo").innerHTML =
-            "<strong>Estado:</strong> Libre de alertas meteorológicas.<br>" +
-            "<strong>Recomendación:</strong> Puede continuar sus actividades con normalidad.";
-        document.getElementById("al-tarjeta-btn").textContent = "Ver estado";
-        
-        tarjeta.classList.add("al-visible");
+        document.getElementById("al-barra-superior")?.classList.remove("al-visible");
+        document.getElementById("al-tarjeta")?.classList.remove("al-visible");
 
         // Enfocar el botón de cerrar
         setTimeout(() => document.getElementById("al-btn-cerrar")?.focus(), 1000);
@@ -761,7 +743,6 @@ export function cerrarAlertaTotal() {
         }
     }).catch(() => {});
     alertaActiva = false;
-    mostrarAlertaLibre();
 }
 
 function detenerIntervalos() {
