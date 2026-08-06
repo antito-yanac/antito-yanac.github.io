@@ -1,6 +1,6 @@
 //======================================================
 // Buscador Lugares Antamina 2026
-// Archivo principal
+// Archivo principalvigilancia
 //======================================================
 
 import { cargarLugares } from "./data.js";
@@ -136,13 +136,13 @@ function configurarBotonPrueba() {
     let nivelIndex = 0;
     const niveles = ["vigilancia", "precaucion", "alerta", "emergencia"];
     const titulos = {
-        vigilancia:  "🌩️ VIGILANCIA METEOROLÓGICA",
+        vigilancia:  "🌩️ LIBRE DE ALERTAS",
         precaucion:  "⚡ PRECAUCIÓN: ACTIVIDAD ELÉCTRICA",
         alerta:      "⚡ ALERTA DE TORMENTA ELÉCTRICA",
         emergencia:  "⚡ ALERTA ROJA: TORMENTA ELÉCTRICA INTENSA"
     };
     const mensajes = {
-        vigilancia:  "Se detectó actividad eléctrica lejana acercándose a la zona.",
+        vigilancia:  "No se registran alertas activas por tormenta eléctrica. Puede continuar con sus actividades con normalidad.",
         precaucion:  "Posibles descargas eléctricas detectadas en las proximidades.",
         alerta:      "Se detectó actividad eléctrica intensa en el distrito de Yanacancha.",
         emergencia:  "Tormenta eléctrica severa sobre el distrito de Yanacancha. Descargas frecuentes."
