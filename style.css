@@ -692,3 +692,104 @@ body {
     }
 
 }
+/* ==================================
+   SUGERENCIAS DEL BUSCADOR
+================================== */
+
+.result {
+
+    position: relative;
+
+    padding: 9px 11px 9px 35px;
+
+    border-bottom:
+        1px solid
+        rgba(40,55,60,.08);
+
+    background:
+        rgba(255,255,255,.98);
+
+    cursor: pointer;
+
+    transition:
+        background .12s ease;
+}
+
+
+.result:last-child {
+
+    border-bottom: 0;
+}
+
+
+.result::before {
+
+    content: "📍";
+
+    position: absolute;
+
+    left: 10px;
+
+    top: 11px;
+
+    font-size: 13px;
+}
+
+
+.result:hover,
+.result.selected {
+
+    background: #f1f6f3;
+}
+
+
+.result h3 {
+
+    margin: 0;
+
+    color: #293940;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    line-height: 1.25;
+}
+
+
+.result p {
+
+    margin-top: 2px;
+
+    color: #6f7d83;
+
+    font-size: 9px;
+
+    line-height: 1.2;
+}
+
+
+.result small {
+
+    display: block;
+
+    margin-top: 2px;
+
+    color: #9aa4a8;
+
+    font-size: 8px;
+
+    line-height: 1.2;
+}
+
+
+.result mark {
+
+    padding: 0;
+
+    background: transparent;
+
+    color: #168844;
+
+    font-weight: 850;
+}
