@@ -4,86 +4,207 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-<title>🌍 Buscador Lugares Antamina 2026 </title>
+<title>Antamina · Vigilancia</title>
 
 <link rel="stylesheet" href="style.css">
 
-<!-- Leaflet (sigue siendo necesario; MapTiler usa raster tiles de Leaflet) -->
 <link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-<!-- Estilos de notificaciones (toasts/popups) -->
 <link rel="stylesheet" href="notifications.css">
 
-<!-- Estilos del Sistema de Alerta Meteorológica -->
 <link rel="stylesheet" href="css/alerts.css">
 
 </head>
 
 <body>
 
-<div class="container">
+<div class="app">
 
-    <h1>🌍 Buscador Lugares Mina </h1>
-
-    <input
-        id="search"
-        type="text"
-        placeholder="Buscar lugar..."
-        autocomplete="off"
-        autofocus>
-
-    <div id="stats">
-        Cargando lugares...
-    </div>
-
-    <!-- Botón de consulta del Sistema de Alerta Meteorológica -->
-    <div id="alerta-test-wrap" style="text-align:center; margin-top:12px;">
-        <button id="btn-test-alerta" type="button"
-            style="background:rgba(231,76,60,0.25); border:1.5px solid rgba(231,76,60,0.6); color:#ff9a8a;
-                   padding:8px 16px; border-radius:20px; cursor:pointer; font-size:13px; font-family:inherit;">
-            ⚡ Consultar alerta meteorológica
-        </button>
-    </div>
-
-    <div id="results">
-    </div>
-
-    <!-- NUEVO -->
-    <div id="map-container">
+    <!-- MAPA A PANTALLA COMPLETA -->
+    <main id="map-container">
         <div id="map"></div>
-        <!-- Botón de ubicación actual (estilo Google Maps) -->
-        <button id="btn-ubicacion" title="Mi ubicación" aria-label="Mostrar mi ubicación">
-            <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#4285f4" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
+
+        <button
+            id="btn-ubicacion"
+            title="Mi ubicación"
+            aria-label="Mostrar mi ubicación">
+
+            <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                xmlns="http://www.w3.org/2000/svg">
+
+                <path
+                    fill="#4285f4"
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
             </svg>
+
         </button>
-    </div>
-    <div id="info-panel">
 
-    	<h2>Seleccione un lugar</h2>
+    </main>
 
-    	<div id="info-content">
 
-        	Utilice el buscador para localizar un lugar.
+    <!-- CABECERA -->
+    <section class="top-ui">
 
-    	</div>
+        <div class="left-ui">
 
-    </div>
+            <div class="brand">
+
+                <div class="brand-icon">
+                    ⚡
+                </div>
+
+                <div>
+                    <div class="brand-name">
+                        ANTAMINA
+                    </div>
+
+                    <div class="brand-subtitle">
+                        Mapa de lugares
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- BUSCADOR -->
+            <div class="search-box">
+
+                <span class="search-icon">
+                    ⌕
+                </span>
+
+                <input
+                    id="search"
+                    type="search"
+                    placeholder="Buscar lugar..."
+                    autocomplete="off">
+
+            </div>
+
+
+            <!-- RESULTADOS DEL BUSCADOR -->
+            <div id="results"></div>
+
+            <div id="stats">
+                Cargando lugares...
+            </div>
+
+        </div>
+
+
+        <!-- ESTADO SUPERIOR -->
+        <button
+            class="alert-status"
+            id="alertStatus"
+            type="button">
+
+            <span class="alert-title">
+
+                <span class="alert-dot"></span>
+
+                LIBRE DE ALERTAS
+
+            </span>
+
+            <span class="alert-description">
+                Sistema en vigilancia — sin alertas activas
+            </span>
+
+        </button>
+
+    </section>
+
+
+    <!-- VIGILANCIA -->
+    <button
+        class="watch"
+        id="watchButton"
+        type="button">
+
+        <span class="watch-icon">
+            ◉
+        </span>
+
+        Vigilancia
+
+    </button>
+
+
+    <!-- TARJETA INFERIOR -->
+    <section
+        class="info"
+        id="info-panel">
+
+        <div class="vigilance-kicker">
+            VIGILANCIA
+        </div>
+
+        <div class="vigilance-title">
+            Libre de alertas
+        </div>
+
+        <div
+            class="vigilance-meta"
+            id="info-content">
+
+            <div class="vigilance-line">
+
+                <span>🟢</span>
+
+                <span>
+                    <strong>Estado:</strong>
+                    Sin alertas meteorológicas
+                </span>
+
+            </div>
+
+            <div class="vigilance-line">
+
+                <span>📍</span>
+
+                <span>
+                    <strong>Sistema:</strong>
+                    En vigilancia
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- SE CONSERVA PARA TU JS DE ALERTAS -->
+        <button
+            id="btn-test-alerta"
+            type="button"
+            class="hidden-alert-trigger">
+
+            Consultar alerta meteorológica
+
+        </button>
+
+    </section>
+
+
+    <footer class="footer">
+        Antamina · Información meteorológica · 2026
+    </footer>
 
 </div>
 
-<!-- Fuse.js -->
+
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 
-<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Firebase se carga como módulo ES dentro de js/notifications.js -->
 
 <script type="module" src="js/app.js"></script>
 
 </body>
+
 </html>
