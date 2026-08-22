@@ -316,95 +316,6 @@ body {
     display: none;
 }
 
-
-/* ==================================
-   LIBRE DE ALERTAS SUPERIOR modificado
-================================== */
-/* ==================================
-   BARRA SUPERIOR DERECHA
-================================== */
-
-.top-bar-right {
-
-    width: 40%;
-
-    min-height: 39px;
-
-    padding: 0 14px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 12px;
-
-    background:
-        rgba(255,255,255,.92);
-
-    backdrop-filter:
-        blur(10px);
-
-    box-shadow:
-        0 2px 10px
-        rgba(0,0,0,.10);
-
-    color: #40525a;
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    letter-spacing: .45px;
-
-    pointer-events: none;
-}
-
-/* ==================================
-   VIGILANCIA
-================================== */
-
-.watch {
-
-    position: absolute;
-
-    z-index: 900;
-
-    right: 9px;
-
-    bottom: 126px;
-
-    height: 36px;
-
-    padding: 0 10px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.9);
-
-    border-radius: 18px;
-
-    background: #168844;
-
-    color: white;
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    box-shadow:
-        0 4px 16px
-        rgba(22,136,68,.35);
-}
-
-
 /* ==================================
    TARJETA INFERIOR
 ================================== */
@@ -626,15 +537,6 @@ body {
 
         bottom: 35px;
     }
-
-
-    .watch {
-
-        right: 20px;
-
-        bottom: 100px;
-    }
-
 
     #btn-ubicacion {
 
