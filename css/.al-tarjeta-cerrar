@@ -463,6 +463,7 @@
         border-radius: 8px;
         border-left-width: 3px;
         box-shadow: 0 4px 14px rgba(0,0,0,.35);
+        z-index: 24000; /* Se mantiene sobre el mapa pero no estorba la navegación */
 
 #al-tarjeta.al-visible {
     display: block;
