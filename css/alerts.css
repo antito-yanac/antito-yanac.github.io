@@ -224,7 +224,7 @@
 .al-titulo {
     text-align: center;
     font-size: 26px;
-    font-weight: 800;
+    font-weight: 600;
     margin: 0 0 6px;
     letter-spacing: 0.5px;
     text-shadow: 0 2px 8px rgba(0,0,0,0.4);
@@ -235,7 +235,7 @@
     padding: 3px 12px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
     background: rgba(0,0,0,0.28);
@@ -276,7 +276,7 @@
 
 .al-contador {
     font-size: 30px;
-    font-weight: 800;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: 2px;
     text-shadow: 0 0 14px rgba(255,255,255,0.35);
@@ -309,7 +309,7 @@
     border: none;
     border-radius: 12px;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s;
     font-family: inherit;
@@ -422,7 +422,7 @@
 
 .al-barra-icono { font-size: 20px; flex-shrink: 0; }
 .al-barra-texto { flex: 1; min-width: 0; }
-.al-barra-nivel { font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; }
+.al-barra-nivel { font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; }
 .al-barra-desc  { font-size: 13px; opacity: 0.95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .al-barra-tiempo { font-size: 12px; opacity: 0.85; flex-shrink: 0; white-space: nowrap; }
 .al-barra-cerrar {
@@ -530,7 +530,7 @@
 
 .al-tarjeta-titulo {
     font-size: 14px;
-    font-weight: 800;
+    font-weight: 600;
     margin: 0;
     line-height: 1.1;
 }
@@ -560,7 +560,7 @@
     background: var(--al-color, #e74c3c);
     color: #fff;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     font-family: inherit;
     transition: filter 0.2s, transform 0.15s;
@@ -654,7 +654,7 @@
 
 .al-modal-titulo {
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 600;
     margin: 0 0 6px;
     text-align: center;
 }
