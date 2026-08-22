@@ -454,26 +454,40 @@
    ============================================================ */
 /* --- TARJETA FLOTANTE MÓVIL (-20% de proporciones para evitar traslapes) --- */
     #al-tarjeta {
-        bottom: 12px;
-        right: 8px;
-        left: auto;
-        width: 190px;              /* ~20% más pequeña que los 245px base */
-        max-width: calc(100vw - 16px);
-        padding: 8px 9px;
-        border-radius: 8px;
-        border-left-width: 3px;
-        box-shadow: 0 4px 14px rgba(0,0,0,.35);
-        z-index: 24000; /* Se mantiene sobre el mapa pero no estorba la navegación */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    left: auto;
+    width: 245px;
+    max-width: calc(100vw - 32px);
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(20, 20, 25, 0.92);
+    border-left: 4px solid var(--al-color, #e74c3c);
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 24000;
+    
+    display: none;
+    opacity: 0;
+    transform: translateY(60px);
+    transition: transform 0.4s cubic-bezier(0.22, 1.2, 0.36, 1), opacity 0.35s ease;
+}
 
 #al-tarjeta.al-visible {
-    display: block;
-    transform: translateY(0);
-    opacity: 1;
+    display: block !important;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
 }
 
 .al-tarjeta-header {
-    gap: 5px;
-    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 .al-tarjeta-icono {
@@ -495,6 +509,7 @@
 
 .al-tarjeta-titulo {
     font-size: 11px !important;
+    font-weight: 600;
     margin: 0;
     line-height: 1.1;
 }
@@ -505,27 +520,41 @@
 }
 
 .al-tarjeta-cuerpo {
-    font-size: 9.5px !important;
-    line-height: 1.25;
-    margin: 3px 0 0;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
 }
 
 .al-tarjeta-cuerpo strong { color: #fff; }
 
 .al-tarjeta-btn {
-    padding: 6px;
+    width: 100%;
+    padding: 7px;
     font-size: 11px;
+    font-weight: 600;
+    border: none;
     border-radius: 6px;
-    margin-top: 5px;
+    background: var(--al-color, #e74c3c);
+    color: #fff;
+    margin-top: 8px;
+    cursor: pointer;
     transition: filter 0.2s, transform 0.15s;
 }
 .al-tarjeta-btn:hover { filter: brightness(1.12); }
 .al-tarjeta-btn:active { transform: scale(0.97); }
 
 .al-tarjeta-cerrar {
-    top: 6px;
-    right: 8px;
-    font-size: 14px;
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
 }
 .al-tarjeta-cerrar:hover { color: #fff; }
 
