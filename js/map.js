@@ -579,7 +579,7 @@ function irA(lugar) {
 
         [lugar.lat, lugar.lng],
 
-        17,
+        13,
 
         {
 
