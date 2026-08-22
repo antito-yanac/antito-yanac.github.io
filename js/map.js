@@ -588,6 +588,20 @@ function irA(lugar) {
         }
 
     );
+    map.once("moveend", () => {
+
+        const desplazamientoY =
+            Math.round(map.getSize().y * 0.10);
+
+        map.panBy(
+            [0, desplazamientoY],
+            {
+                animate: true,
+                duration: 0.5
+            }
+        );
+
+    });
 
     geoLayer.eachLayer(layer => {
 
