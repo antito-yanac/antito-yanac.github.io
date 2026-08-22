@@ -452,51 +452,17 @@
 /* ============================================================
    4. TARJETA FLOTANTE (esquina inferior derecha)
    ============================================================ */
-#al-tarjeta {
-    position: fixed;
-
-    bottom: 18px;
-    right: 18px;
-
-    z-index: 24000;
-
-    width: 245px;
-    max-width: calc(100vw - 36px);
-
-    background: rgba(20, 45, 30, 0.94);
-
-    color: #fff;
-
-    border-radius: 13px;
-
-    padding: 12px 13px 11px;
-
-    font-family:
-        'Segoe UI',
-        system-ui,
-        -apple-system,
-        sans-serif;
-
-    box-shadow:
-        0 10px 28px rgba(0, 0, 0, 0.35),
-        0 0 14px rgba(46, 204, 113, 0.18);
-
-    border-left:
-        4px solid var(--al-color, #e74c3c);
-
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-
-    transform: translateY(120px);
-
-    opacity: 0;
-
-    transition:
-        transform 0.5s cubic-bezier(0.22,1.2,0.36,1),
-        opacity 0.5s ease;
-
-    display: none;
-}
+/* --- TARJETA FLOTANTE MÓVIL (-20% de proporciones para evitar traslapes) --- */
+    #al-tarjeta {
+        bottom: 12px;
+        right: 8px;
+        left: auto;
+        width: 190px;              /* ~20% más pequeña que los 245px base */
+        max-width: calc(100vw - 16px);
+        padding: 8px 9px;
+        border-radius: 8px;
+        border-left-width: 3px;
+        box-shadow: 0 4px 14px rgba(0,0,0,.35);
 
 #al-tarjeta.al-visible {
     display: block;
@@ -505,14 +471,12 @@
 }
 
 .al-tarjeta-header {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 6px;
+    gap: 5px;
+    margin-bottom: 3px;
 }
 
 .al-tarjeta-icono {
-    font-size: 26px;
+    font-size: 18px;
     line-height: 1;
     position: relative;
     flex-shrink: 0;
@@ -529,55 +493,38 @@
 }
 
 .al-tarjeta-titulo {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 11px !important;
     margin: 0;
     line-height: 1.1;
 }
 
 .al-tarjeta-sub {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 8px;
-    color: var(--al-color, #e74c3c);
-    font-weight: 700;
+    font-size: 8px !important;
+    letter-spacing: 2px !important;
 }
 
 .al-tarjeta-cuerpo {
-    font-size: 11px;
-    line-height: 1.35;
-    margin: 6px 0 0;
-    color: #ddd;
+    font-size: 9.5px !important;
+    line-height: 1.25;
+    margin: 3px 0 0;
 }
 
 .al-tarjeta-cuerpo strong { color: #fff; }
 
 .al-tarjeta-btn {
-    width: 100%;
-    padding: 11px;
-    border: none;
-    border-radius: 10px;
-    background: var(--al-color, #e74c3c);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
+    padding: 6px;
+    font-size: 11px;
+    border-radius: 6px;
+    margin-top: 5px;
     transition: filter 0.2s, transform 0.15s;
 }
 .al-tarjeta-btn:hover { filter: brightness(1.12); }
 .al-tarjeta-btn:active { transform: scale(0.97); }
 
 .al-tarjeta-cerrar {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 18px;
-    cursor: pointer;
-    line-height: 1;
+    top: 6px;
+    right: 8px;
+    font-size: 14px;
 }
 .al-tarjeta-cerrar:hover { color: #fff; }
 
@@ -733,6 +680,9 @@
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+/* ============================================================
+   RESPONSIVE (Ajustes visuales para móvil - Reducción y Descompresión)
+   ============================================================ */
 @media (max-width: 600px) {
     .al-panel { padding: 22px 16px 20px; }
     .al-titulo { font-size: 21px; }
@@ -742,31 +692,46 @@
     .al-btn { min-width: 100%; }
     .al-botones { flex-direction: column; }
 
-    #al-tarjeta {
-    bottom: 42px;
-    right: 7px;
-    left: auto;
-
-    width: 165px;
-    max-width: calc(100vw - 14px);
-
-    padding: 7px 8px 7px;
-    border-radius: 9px;
-
-        border-left-width: 3px;
-
-        box-shadow:
-            0 4px 16px rgba(0,0,0,.28);
-}   
-
+    /* --- BARRA SUPERIOR MÓVIL (Más ancha horizontalmente y muy compacta verticalmente) --- */
     #al-barra-superior {
-        font-size: 12px;
-        padding: 8px 12px;
-        flex-wrap: wrap;
+        top: 6px;
+        right: 8px;
+        width: calc(100% - 16px);  /* Se extiende a casi todo el ancho para no amontonar texto */
+        max-width: 320px;
+        min-height: 22px;
+        padding: 3px 8px;
+        font-size: 10px;
+        gap: 6px;
+        border-radius: 6px;
+        flex-wrap: nowrap;         /* Evita saltos de línea innecesarios */
     }
-    .al-barra-desc { white-space: normal; }
-    .al-barra-tiempo { display: none; }
-}
+
+    .al-barra-icono { 
+        font-size: 13px !important; 
+    }
+
+    .al-barra-nivel { 
+        font-size: 10px !important; 
+        line-height: 1.1; 
+    }
+
+    .al-barra-desc { 
+        font-size: 9px !important; 
+        line-height: 1.1;
+        white-space: nowrap !important; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+
+    .al-barra-tiempo { 
+        display: none; 
+    }
+
+    .al-barra-cerrar {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+    }
 
 /* Respetar preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
