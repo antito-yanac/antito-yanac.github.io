@@ -36,11 +36,6 @@ let iconoTu = null;           // icono del marcador (se crea en crearMapa)
 // ======================================================
 // 7. MAPA ILUMINADO — Alerta meteorológica
 // ======================================================
-// Crea un círculo rojo parpadeante + un rayo SVG que cae sobre
-// el punto indicado. Devuelve un objeto con método detener()
-// para que js/alertas.js pueda limpiarlo al cerrar la alerta.
-//
-// nivelKey: "vigilancia" | "precaucion" | "alerta" | "emergencia"
 export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
 
     if (!map) return null;
@@ -136,18 +131,6 @@ export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
 // ======================================================
 // 7b. ILUMINAR ZONA DESDE GEOJSON (lugares.json)
 // ======================================================
-// Busca un punto real dentro del GeoJSON cargado (lugares.json)
-// cuyo nombre coincida con la zona indicada (ej: "Campamentos"),
-// y pinta sobre ese punto el efecto de alerta: círculos
-// concéntricos dinámicos + rayo SVG cayendo + núcleo.
-//
-// Esto usa el punto REAL del mapa (no coordenadas predefinidas),
-// de modo que el rayo cae exactamente sobre el marcador que el
-// usuario puede ver y hacer clic.
-//
-// @param {string} nombreZona  - nombre o parte del nombre a buscar
-// @param {string} nivelKey    - nivel de alerta (color)
-// @returns {Promise<object|null>} objeto con detener() o null
 export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") {
     if (!map) return null;
 
@@ -162,9 +145,7 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
     // --- 1. Buscar el punto en el GeoJSON cargado ---
     let puntoEncontrado = null;
 
-    // Palabras clave de búsqueda derivadas del nombre de la zona
     const zonaLower = (nombreZona || "").toLowerCase();
-    // Extraer el nombreCorto: "Zona 1 - Campamentos" -> "Campamentos"
     const partes = nombreZona.split("-");
     const nombreBusqueda = partes.length > 1
         ? partes.slice(1).join("-").trim().toLowerCase()
@@ -175,11 +156,10 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
             if (puntoEncontrado) return;
             const f = layer.feature;
             if (!f) return;
-            // Solo puntos (Point)
             if (f.geometry && f.geometry.type === "Point") {
                 const nombre = (f.properties?.Name || "").toLowerCase();
                 if (nombre.includes(nombreBusqueda) || nombreBusqueda.includes(nombre)) {
-                    const coords = f.geometry.coordinates; // [lng, lat, alt?]
+                    const coords = f.geometry.coordinates;
                     puntoEncontrado = {
                         lat: coords[1],
                         lng: coords[0],
@@ -222,7 +202,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
     const lng = puntoEncontrado.lng;
 
     // --- 3. Pintar el efecto sobre el punto encontrado ---
-    // Círculo concéntrico grande (radio dinámico parpadeante)
     const circulo = L.circle([lat, lng], {
         radius: 1800,
         color: color,
@@ -233,7 +212,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         dashArray: "6 6"
     }).addTo(map);
 
-    // Círculo intermedio concéntrico
     const circuloMedio = L.circle([lat, lng], {
         radius: 900,
         color: color,
@@ -243,7 +221,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         fillOpacity: 0.15
     }).addTo(map);
 
-    // Núcleo (punto central sólido)
     const nucleo = L.circleMarker([lat, lng], {
         radius: 10,
         color: "#fff",
@@ -252,7 +229,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         fillOpacity: 0.95
     }).addTo(map);
 
-    // Rayo SVG cayendo sobre el punto
     const rayoIcon = L.divIcon({
         className: "al-mapa-rayo",
         html: `<svg class="al-mapa-rayo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -267,7 +243,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         zIndexOffset: 2000
     }).addTo(map);
 
-    // Anillo de pulso expansivo (radar)
     const pulsoIcon = L.divIcon({
         className: "",
         html: `<div style="width:40px;height:40px;border-radius:50%;
@@ -278,7 +253,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
     });
     const pulsoMarker = L.marker([lat, lng], { icon: pulsoIcon, zIndexOffset: 1900 }).addTo(map);
 
-    // Popup informativo en el punto
     circulo.bindPopup(
         `<b>⚡ Zona de alerta</b><br>` +
         `Actividad eléctrica detectada<br>` +
@@ -286,7 +260,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         `Lat: ${lat.toFixed(5)}<br>Lng: ${lng.toFixed(5)}`
     );
 
-    // Parpadeo del círculo (opacidad) — círculos concéntricos dinámicos
     let parpadeoOn = true;
     const intervalParpadeo = setInterval(() => {
         parpadeoOn = !parpadeoOn;
@@ -294,7 +267,6 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         circuloMedio.setStyle({ fillOpacity: parpadeoOn ? 0.25 : 0.08, opacity: parpadeoOn ? 0.7 : 0.3 });
     }, 700);
 
-    // Volar al punto
     map.flyTo([lat, lng], 12, { duration: 1.4 });
 
     return {
@@ -321,10 +293,6 @@ export function crearMapa(idDiv) {
 
     map = L.map(idDiv);
 
-    // --------------------------------------------------
-    // Crear el icono del marcador "Tú" aquí (cuando Leaflet
-    // ya está garantizado que está cargado)
-    // --------------------------------------------------
     iconoTu = L.divIcon({
         className: "",
         html: '<div style="position:relative;text-align:center;">' +
@@ -335,10 +303,6 @@ export function crearMapa(idDiv) {
         iconAnchor: [11, 11]
     });
 
-    // --------------------------------------------------
-    // Capa base: MapTiler (raster tiles) reemplaza a
-    // OpenStreetMap. Leaflet se mantiene igual.
-    // --------------------------------------------------
     L.tileLayer(
         `https://api.maptiler.com/maps/${MAP_STYLE}/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
         {
@@ -354,9 +318,6 @@ export function crearMapa(idDiv) {
 
     map.setView([-9.50, -77.00], 9);
 
-    // --------------------------------------------------
-    // Botón de ubicación actual (estilo Google Maps)
-    // --------------------------------------------------
     const btnUbicacion = document.getElementById("btn-ubicacion");
     if (btnUbicacion) {
         btnUbicacion.addEventListener("click", mostrarMiUbicacion);
@@ -377,16 +338,13 @@ function mostrarMiUbicacion() {
 
     const btn = document.getElementById("btn-ubicacion");
 
-    // Verificar soporte de geolocation
     if (!navigator.geolocation) {
         alert("Tu navegador no soporta geolocalización.");
         return;
     }
 
-    // Estado de carga: animación pulse
     btn.classList.add("buscar");
 
-    // Opciones de alta precisión
     const options = {
         enableHighAccuracy: true,
         timeout: 15000,
@@ -395,14 +353,12 @@ function mostrarMiUbicacion() {
 
     navigator.geolocation.getCurrentPosition(
         (pos) => {
-            // Éxito: quitar animación
             btn.classList.remove("buscar");
 
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             const accuracy = pos.coords.accuracy;
 
-            // Eliminar marcador y círculo anteriores si existen
             if (markerUbicacion) {
                 map.removeLayer(markerUbicacion);
             }
@@ -410,7 +366,6 @@ function mostrarMiUbicacion() {
                 map.removeLayer(circleAccuracy);
             }
 
-            // Círculo de precisión (radio = accuracy en metros)
             circleAccuracy = L.circle([lat, lng], {
                 radius: accuracy,
                 color: "#00c853",
@@ -420,7 +375,6 @@ function mostrarMiUbicacion() {
                 fillOpacity: 0.12
             }).addTo(map);
 
-            // Marcador verde "Tú"
             markerUbicacion = L.marker([lat, lng], {
                 icon: iconoTu,
                 zIndexOffset: 1000
@@ -433,15 +387,12 @@ function mostrarMiUbicacion() {
                 `Precisión: ±${Math.round(accuracy)} m`
             );
 
-            // Volar hacia la ubicación con zoom apropiado
-            // Mayor accuracy → mayor zoom
             let zoomLevel = 16;
             if (accuracy > 100) zoomLevel = 14;
             if (accuracy > 500) zoomLevel = 12;
 
             map.flyTo([lat, lng], zoomLevel, { duration: 1.2 });
 
-            // Iniciar seguimiento continuo (actualiza al moverse)
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
             }
@@ -455,14 +406,13 @@ function mostrarMiUbicacion() {
                         circleAccuracy.setRadius(pos2.coords.accuracy);
                     }
                 },
-                (err) => { /* errores de seguimiento silenciosos */ },
+                (err) => { },
                 { enableHighAccuracy: true, maximumAge: 5000 }
             );
 
             console.log("✅ Ubicación actual:", lat, lng, "±" + accuracy + "m");
         },
         (error) => {
-            // Error: quitar animación
             btn.classList.remove("buscar");
 
             let mensaje = "No se pudo obtener tu ubicación.\n\n";
@@ -491,10 +441,6 @@ function mostrarMiUbicacion() {
     );
 
 }
-
-// ======================================================
-// FIN: Funciones de ubicación
-// ======================================================
 
 function cargarGeoJSON(lugares) {
 
@@ -538,9 +484,9 @@ function cargarGeoJSON(lugares) {
 
             const nombre = feature.properties?.Name || "Sin nombre";
 
+            // Se eliminó la variable del tipo de geometría (Point/Polygon)
             layer.bindPopup(`
-                <b>${nombre}</b><br>
-                ${feature.geometry.type}
+                <b>${nombre}</b>
             `);
 
         }
@@ -634,14 +580,9 @@ function irA(lugar) {
 // ======================================================
 // PINTAR POLÍGONO DE ZONA CON COLOR DE ALERTA
 // ======================================================
-// Dado el nombre de una zona (ej: "Zona 1 - Campamentos")
-// y un color de nivel de alerta (hex), pinta el polígono
-// correspondiente en el mapa con ese color.
-// Los polígonos se cargan desde zonas.json.
 let zonasData = null;
 let poligonoZonaActivo = null;
 
-// Carga asíncrona de zonas.json (se cachea)
 async function cargarZonas() {
     if (zonasData) return zonasData;
     try {
@@ -654,22 +595,14 @@ async function cargarZonas() {
     }
 }
 
-/**
- * Pinta el polígono de la zona indicada con el color del nivel de alerta.
- * @param {string} nombreZona - Nombre completo de la zona (ej: "Zona 1 - Campamentos")
- * @param {string} color - Color hex del nivel de alerta (ej: "#e74c3c")
- * @returns {Promise<object|null>} Objeto con método detener() o null si no se encontró
- */
 export async function pintarPoligonoZona(nombreZona, color = "#e74c3c") {
     if (!map) return null;
 
-    // Limpiar polígono anterior si existe
     limpiarPoligonosZona();
 
     const data = await cargarZonas();
     if (!data || !data.zonas) return null;
 
-    // Buscar la zona por nombre (coincidencia parcial o exacta)
     const zona = data.zonas.find(z =>
         z.nombre === nombreZona ||
         z.nombreCorto === nombreZona ||
@@ -682,10 +615,8 @@ export async function pintarPoligonoZona(nombreZona, color = "#e74c3c") {
         return null;
     }
 
-    // Convertir coordenadas [lng, lat] a [lat, lng] para Leaflet
     const latlngs = zona.poligono.map(coord => [coord[1], coord[0]]);
 
-    // Crear el polígono con el color de la alerta
     poligonoZonaActivo = L.polygon(latlngs, {
         color: color,
         weight: 4,
@@ -695,13 +626,11 @@ export async function pintarPoligonoZona(nombreZona, color = "#e74c3c") {
         dashArray: "10 6"
     }).addTo(map);
 
-    // Popup informativo
     poligonoZonaActivo.bindPopup(
         `<b>⚡ ${zona.nombre}</b><br>` +
         `Zona bajo alerta meteorológica`
     );
 
-    // Volar a la zona
     if (zona.lat && zona.lng) {
         map.flyTo([zona.lat, zona.lng], 13, { duration: 1.4 });
     } else {
@@ -717,14 +646,11 @@ export async function pintarPoligonoZona(nombreZona, color = "#e74c3c") {
     };
 }
 
-/**
- * Limpia/elimina el polígono de zona pintado actualmente.
- */
 export function limpiarPoligonosZona() {
     if (poligonoZonaActivo && map) {
         try {
             map.removeLayer(poligonoZonaActivo);
-        } catch (e) { /* no crítico */ }
+        } catch (e) { }
         poligonoZonaActivo = null;
     }
 }
