@@ -317,7 +317,7 @@ body {
 }
 
 /* ==================================
-   TARJETA INFERIOR
+   TARJETA INFERIOR (INFO-PANEL COMPACTO)
 ================================== */
 
 .info {
@@ -335,9 +335,9 @@ body {
             6px
         );
 
-    width: 190px;
+    width: 160px; /* Tamaño reducido */
 
-    padding: 7px 9px;
+    padding: 6px 8px;
 
     border:
         1px solid
@@ -346,7 +346,7 @@ body {
     border-radius: 10px;
 
     background:
-        rgba(255,255,255,.78);
+        rgba(255,255,255,.82);
 
     backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(7px);
@@ -355,42 +355,36 @@ body {
         0 3px 12px
         rgba(0,0,0,.08);
 
-    opacity: .82;
+    opacity: .9;
 }
 
 .vigilance-kicker {
 
-    font-size: 7px;
+    font-size: 8px;
 
-    font-weight: 700;
+    font-weight: 800;
 
     letter-spacing: .7px;
 
     color: #1f6f3a;
+    
+    margin-bottom: 2px;
 }
 
-
-.vigilance-title {
-
-    margin-top: 1px;
-
-    font-size: 10px;
-
-    line-height: 1.1;
-
-    font-weight: 700;
-
-    color: #1f6f3a;
+/* Ocultar el texto 'Libre de alertas' dentro del info-panel */
+.info .vigilance-title {
+    display: none !important;
 }
-
 
 .vigilance-meta {
 
-    margin-top: 4px;
+    margin-top: 2px;
 
-    display: grid;
+    display: flex;
 
-    gap: 2px;
+    flex-direction: column;
+
+    gap: 3px;
 
     color: #405048;
 
@@ -415,6 +409,27 @@ body {
     align-items: center;
 
     gap: 4px;
+}
+
+/* Oculta altitud, tipo y copiar coordenadas si están dentro de la lista */
+.vigilance-line.altitud,
+.vigilance-line.tipo,
+.btn-copiar-coordenadas {
+    display: none !important;
+}
+
+/* Estilo para el botón restante (Google Earth) */
+.info button:not(.btn-copiar-coordenadas) {
+    margin-top: 4px;
+    padding: 3px 6px;
+    font-size: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
 }
 
 
@@ -528,13 +543,13 @@ body {
 
 
     .info {
-    left: 18px;
-    right: auto;
+        left: 18px;
+        right: auto;
 
-    bottom: 35px;
+        bottom: 35px;
 
-    width: 190px;
-}
+        width: 160px;
+    }
 
     #btn-ubicacion {
 
