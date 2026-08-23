@@ -73,7 +73,7 @@
 /* Panel del banner — baja desde arriba con rebote */
 .al-panel {
     width: min(92vw, 640px);
-    margin-top: -120vh;                 /* empieza fuera, arriba */
+    margin-top: -120vh;                  /* empieza fuera, arriba */
     border-radius: 18px;
     padding: 30px 28px 26px;
     color: #fff;
@@ -82,7 +82,6 @@
     position: relative;
     overflow: hidden;
     background: linear-gradient(160deg, var(--al-color, #e74c3c), var(--al-color-dark, #c0392b));
-    /* borde con efecto sirena (ver más abajo) */
     border: 3px solid var(--al-color, #e74c3c);
     transform: translateY(0);
 }
@@ -356,48 +355,37 @@
 }
 
 /* ============================================================
-   3. BARRA SUPERIOR PERMANENTE
+   3. BARRA SUPERIOR PERMANENTE (Escritorio)
    ============================================================ */
 #al-barra-superior {
     position: fixed;
-
-    top: 7px;
-    right: 7px;
+    top: 14px;
+    right: 16px;
     left: auto;
 
-    width: 50%;
-    max-width: 180px;
-    min-height: 29px;
+    width: auto;
+    max-width: 380px;
+    min-height: 38px;
 
     z-index: 25000;
 
     display: none;
     align-items: center;
+    gap: 10px;
 
-    gap: 5px;
-
-    padding: 4px 7px;
-
+    padding: 6px 12px;
     color: #fff;
-
-    font-family:
-        'Segoe UI',
-        system-ui,
-        -apple-system,
-        sans-serif;
-
-    font-size: 8px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 11px;
     font-weight: 600;
 
-    background:
-        linear-gradient(
-            135deg,
-            rgba(26, 77, 46, 0.94),
-            rgba(13, 53, 32, 0.88)
-        );
+    background: linear-gradient(
+        135deg,
+        rgba(26, 77, 46, 0.94),
+        rgba(13, 53, 32, 0.88)
+    );
 
     border: 1px solid rgba(46, 204, 113, 0.65);
-
     border-radius: 8px;
 
     backdrop-filter: blur(10px);
@@ -408,10 +396,7 @@
         0 0 18px rgba(46, 204, 113, 0.22);
 
     transform: translateY(-120px);
-
-    transition:
-        transform 0.4s cubic-bezier(0.22,1.2,0.36,1);
-
+    transition: transform 0.4s cubic-bezier(0.22, 1.2, 0.36, 1);
     cursor: pointer;
 }
 
@@ -420,26 +405,28 @@
     transform: translateY(0);
 }
 
-.al-barra-icono { font-size: 20px; flex-shrink: 0; }
+.al-barra-icono { font-size: 18px; flex-shrink: 0; }
 .al-barra-texto { flex: 1; min-width: 0; }
-.al-barra-nivel { font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; }
-.al-barra-desc  { font-size: 13px; opacity: 0.95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.al-barra-tiempo { font-size: 12px; opacity: 0.85; flex-shrink: 0; white-space: nowrap; }
+.al-barra-nivel { font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; }
+.al-barra-desc  { font-size: 11px; opacity: 0.95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-barra-tiempo { font-size: 10px; opacity: 0.85; flex-shrink: 0; white-space: nowrap; }
 .al-barra-cerrar {
     background: rgba(255,255,255,0.2);
     border: none;
     color: #fff;
-    width: 26px; height: 26px;
+    width: 22px; height: 22px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1;
     flex-shrink: 0;
     transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .al-barra-cerrar:hover { background: rgba(255,255,255,0.4); }
 
-/* Animación sutil del borde inferior de la barra */
 @keyframes al-barra-brillo {
     0%, 100% { box-shadow: 0 3px 14px rgba(0,0,0,0.35); }
     50%      { box-shadow: 0 3px 14px rgba(0,0,0,0.35),
@@ -450,15 +437,14 @@
 }
 
 /* ============================================================
-   4. TARJETA FLOTANTE (esquina inferior derecha)
+   4. TARJETA FLOTANTE (esquina inferior derecha - Escritorio)
    ============================================================ */
-/* --- TARJETA FLOTANTE MÓVIL (-20% de proporciones para evitar traslapes) --- */
-    #al-tarjeta {
+#al-tarjeta {
     position: fixed;
     bottom: 20px;
     right: 20px;
     left: auto;
-    width: 245px;
+    width: 240px;
     max-width: calc(100vw - 32px);
     padding: 12px 14px;
     border-radius: 12px;
@@ -470,7 +456,6 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 24000;
-    
     display: none;
     opacity: 0;
     transform: translateY(60px);
@@ -478,9 +463,9 @@
 }
 
 #al-tarjeta.al-visible {
-    display: block !important;
-    transform: translateY(0) !important;
-    opacity: 1 !important;
+    display: block;
+    transform: translateY(0);
+    opacity: 1;
 }
 
 .al-tarjeta-header {
@@ -491,13 +476,12 @@
 }
 
 .al-tarjeta-icono {
-    font-size: 18px;
+    font-size: 20px;
     line-height: 1;
     position: relative;
     flex-shrink: 0;
 }
 
-/* Pulso pequeño en el icono de la tarjeta */
 .al-tarjeta-icono::after {
     content: "";
     position: absolute;
@@ -508,22 +492,24 @@
 }
 
 .al-tarjeta-titulo {
-    font-size: 11px !important;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     margin: 0;
-    line-height: 1.1;
+    line-height: 1.2;
 }
 
 .al-tarjeta-sub {
-    font-size: 8px !important;
-    letter-spacing: 2px !important;
-}
-
-.al-tarjeta-cuerpo {
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 1px;
     opacity: 0.8;
+}
+
+.al-tarjeta-cuerpo {
+    font-size: 11px;
+    line-height: 1.35;
+    margin: 6px 0 0;
+    opacity: 0.9;
 }
 
 .al-tarjeta-cuerpo strong { color: #fff; }
@@ -551,7 +537,7 @@
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
     padding: 0;
     line-height: 1;
@@ -561,7 +547,6 @@
 /* ============================================================
    7. EFECTOS EN EL MAPA (rayo cayendo + círculo rojo)
    ============================================================ */
-/* Rayo SVG que cae sobre el punto del mapa */
 .al-mapa-rayo {
     position: relative;
     width: 46px;
@@ -583,7 +568,6 @@
     95% { opacity: 0; transform: translateY(0) scale(0.8); }
 }
 
-/* Círculo rojo parpadeante en el mapa (usado vía Leaflet circleMarker) */
 @keyframes al-mapa-pulso {
     0%, 100% { opacity: 0.9; }
     50%      { opacity: 0.3; }
@@ -708,95 +692,13 @@
 .al-leyenda-desc { color: #bbb; font-size: 12px; }
 
 /* ============================================================
-   RESPONSIVE
-   ============================================================ */
-/* ============================================================
-   RESPONSIVE (Ajustes visuales para móvil - Reducción y Descompresión)
-   ============================================================ */
-@media (max-width: 600px) {
-    .al-panel { padding: 22px 16px 20px; }
-    .al-titulo { font-size: 21px; }
-    .al-icono { font-size: 70px; }
-    .al-icono-wrap { width: 90px; height: 90px; }
-    .al-contador { font-size: 26px; }
-    .al-btn { min-width: 100%; }
-    .al-botones { flex-direction: column; }
-
-    /* --- BARRA SUPERIOR MÓVIL (Más ancha horizontalmente y muy compacta verticalmente) --- */
-    #al-barra-superior {
-        top: 6px;
-        right: 8px;
-        width: calc(100% - 16px);  /* Se extiende a casi todo el ancho para no amontonar texto */
-        max-width: 320px;
-        min-height: 22px;
-        padding: 3px 8px;
-        font-size: 10px;
-        gap: 6px;
-        border-radius: 6px;
-        flex-wrap: nowrap;         /* Evita saltos de línea innecesarios */
-    }
-
-    .al-barra-icono { 
-        font-size: 13px !important; 
-    }
-
-    .al-barra-nivel { 
-        font-size: 10px !important; 
-        line-height: 1.1; 
-    }
-
-    .al-barra-desc { 
-        font-size: 9px !important; 
-        line-height: 1.1;
-        white-space: nowrap !important; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-    }
-
-    .al-barra-tiempo { 
-        display: none; 
-    }
-
-    .al-barra-cerrar {
-        width: 18px;
-        height: 18px;
-        font-size: 11px;
-    }
-
-/* Respetar preferencia de movimiento reducido */
-@media (prefers-reduced-motion: reduce) {
-    .al-panel,
-    .al-radar,
-    .al-rayo-svg,
-    .al-icono,
-    .al-mapa-rayo-svg,
-    #al-barra-superior,
-    .al-contador.al-critico {
-        animation: none !important;
-    }
-    #al-overlay.al-visible .al-panel { margin-top: 20px; }
-}
-
-/* ============================================================
    ESTADO "LIBRE DE ALERTAS" (verde / vigilancia por defecto)
-   ============================================================
-   Cuando el usuario abre la página o consulta y no hay alertas
-   activas emitidas por el administrador, se muestra una
-   notificación full-screen en verde indicando "LIBRE DE
-   ALERTAS". Es un estado informativo: sin flash, sin sirena,
-   sin contador, sin barra superior ni tarjeta flotante.
-   Las variables CSS --al-color / --al-color-dark / --al-glow
-   ya se aplican dinámicamente en verde desde alertas.js
-   (mostrarAlertaLibre), pero estas reglas aseguran que el
-   panel tenga un aspecto sereno y claramente "seguro". */
-
-/* Overlay más suave para el estado libre (menos opresivo) */
+   ============================================================ */
 #al-overlay.al-libre {
     background: rgba(20, 60, 35, 0.45);
     backdrop-filter: blur(2px);
 }
 
-/* Panel verde: fondo con tono verde, sin resplandor agresivo */
 #al-overlay.al-libre .al-panel {
     background: linear-gradient(160deg, #1a4d2e 0%, #0d3520 100%);
     border: 2px solid var(--al-color, #2ecc71);
@@ -806,13 +708,11 @@
         inset 0 0 30px rgba(46, 204, 113, 0.08);
 }
 
-/* Sin animación de sirena en estado libre */
 #al-overlay.al-libre .al-panel.al-sirena-activa {
     animation: none;
     border-color: var(--al-color, #2ecc71);
 }
 
-/* Badge de nivel verde */
 #al-overlay.al-libre .al-nivel-badge {
     background: var(--al-color, #2ecc71);
     color: #0d3520;
@@ -820,7 +720,6 @@
     box-shadow: 0 0 18px var(--al-glow, rgba(46, 204, 113, 0.6));
 }
 
-/* Icono grande con aura verde tranquila (sin parpadeo intenso) */
 #al-overlay.al-libre .al-icono {
     color: var(--al-color, #2ecc71);
     text-shadow:
@@ -834,7 +733,6 @@
     50%      { transform: scale(1.06); opacity: 1; }
 }
 
-/* Anillos de radar en verde y más lentos (tranquilidad) */
 #al-overlay.al-libre .al-radar {
     border-color: var(--al-color, #2ecc71);
     animation: al-radar-pulso 2.2s ease-out infinite;
@@ -842,24 +740,18 @@
 #al-overlay.al-libre .al-radar.r2 { animation-delay: 0.7s; }
 #al-overlay.al-libre .al-radar.r3 { animation-delay: 1.4s; }
 
-/* Ocultar el rayo SVG en estado libre (no hay tormenta) */
-#al-overlay.al-libre .al-rayo-svg {
-    display: none;
-}
+#al-overlay.al-libre .al-rayo-svg { display: none; }
 
-/* Título en verde claro */
 #al-overlay.al-libre .al-titulo {
     color: var(--al-color, #2ecc71);
     text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
 }
 
-/* Mensaje y recomendación con tono sereno */
 #al-overlay.al-libre .al-mensaje,
 #al-overlay.al-libre .al-recomendacion {
     color: #c8f0d4;
 }
 
-/* Botones con estilo verde "todo en orden" */
 #al-overlay.al-libre .al-btn-primario {
     background: var(--al-color, #2ecc71);
     color: #0d3520;
@@ -885,20 +777,10 @@
 
 /* ============================================================
    MODO "LIBRE" — Barra superior + Tarjeta verde PERSISTENTE
-   ============================================================
-   Cuando no hay alertas activas (estado de vigilancia por defecto),
-   la barra superior y la tarjeta flotante se muestran en verde de
-   forma permanente. La clase .al-modo-libre se aplica a ambos
-   elementos desde alertas.js (mostrarBarraTarjetaLibre) y se
-   quita cuando el admin lanza una alerta real (amarilla/naranja/roja).
-   Estas dos piezas SIEMPRE están visibles hasta que llega una
-   alerta, en cuyo caso se reemplazan por las del nivel correspondiente. */
-
-/* --- BARRA SUPERIOR VERDE PERSISTENTE --- */
+   ============================================================ */
 #al-barra-superior.al-modo-libre {
-    background: linear-gradient(90deg, #1a4d2e 0%, #0d3520 50%, #1a4d2e 100%);
-    border-bottom: 2px solid var(--al-color, #2ecc71);
-    box-shadow: 0 2px 20px rgba(46, 204, 113, 0.4);
+    display: flex !important;
+    transform: translateY(0) !important;
 }
 
 #al-barra-superior.al-modo-libre .al-barra-icono {
@@ -913,9 +795,7 @@
     text-shadow: 0 0 8px rgba(46, 204, 113, 0.3);
 }
 
-#al-barra-superior.al-modo-libre .al-barra-desc {
-    color: #c8f0d4;
-}
+#al-barra-superior.al-modo-libre .al-barra-desc { color: #c8f0d4; }
 
 #al-barra-superior.al-modo-libre .al-barra-tiempo {
     color: #8fd9a8;
@@ -923,23 +803,15 @@
     border: 1px solid rgba(46, 204, 113, 0.3);
 }
 
-#al-barra-superior.al-modo-libre .al-barra-cerrar {
-    color: #8fd9a8;
-    border-color: rgba(46, 204, 113, 0.3);
-}
+#al-barra-superior.al-modo-libre .al-barra-cerrar { display: none !important; }
 
-#al-barra-superior.al-modo-libre .al-barra-cerrar:hover {
-    background: rgba(46, 204, 113, 0.2);
-    color: #fff;
-}
-
-/* --- TARJETA FLOTANTE VERDE PERSISTENTE --- */
 #al-tarjeta.al-modo-libre {
+    display: block !important;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
     background: linear-gradient(160deg, #1a4d2e 0%, #0d3520 100%);
-    border: 2px solid var(--al-color, #2ecc71);
-    box-shadow:
-        0 4px 30px rgba(46, 204, 113, 0.35),
-        0 0 15px rgba(46, 204, 113, 0.2);
+    border-left: 4px solid var(--al-color, #2ecc71);
+    box-shadow: 0 4px 30px rgba(46, 204, 113, 0.35), 0 0 15px rgba(46, 204, 113, 0.2);
 }
 
 #al-tarjeta.al-modo-libre .al-tarjeta-icono {
@@ -948,56 +820,77 @@
     animation: al-pulso-verde 3s ease-in-out infinite;
 }
 
-/* Sin el anillo de alerta parpadeante en modo libre */
-#al-tarjeta.al-modo-libre .al-tarjeta-icono::after {
-    display: none;
+#al-tarjeta.al-modo-libre .al-tarjeta-icono::after { display: none; }
+#al-tarjeta.al-modo-libre .al-tarjeta-sub { color: var(--al-color, #2ecc71); }
+#al-tarjeta.al-modo-libre .al-tarjeta-titulo { color: #e0f5e8; }
+#al-tarjeta.al-modo-libre .al-tarjeta-cuerpo { color: #c8f0d4; }
+#al-tarjeta.al-modo-libre .al-tarjeta-cuerpo strong { color: var(--al-color, #2ecc71); }
+#al-tarjeta.al-modo-libre .al-tarjeta-btn { display: none !important; }
+#al-tarjeta.al-modo-libre .al-tarjeta-cerrar { display: none !important; }
+
+/* ============================================================
+   RESPONSIVE (Ajustes para pantallas pequeñas < 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+    .al-panel { padding: 22px 16px 20px; }
+    .al-titulo { font-size: 21px; }
+    .al-icono { font-size: 70px; }
+    .al-icono-wrap { width: 90px; height: 90px; }
+    .al-contador { font-size: 26px; }
+    .al-btn { min-width: 100%; }
+    .al-botones { flex-direction: column; }
+
+    /* --- BARRA SUPERIOR MÓVIL (Baja a top: 60px para no tapar la búsqueda) --- */
+    #al-barra-superior {
+        top: 60px !important;
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+        max-width: none !important;
+        min-height: 32px !important;
+        padding: 4px 10px !important;
+        font-size: 10px !important;
+        gap: 8px !important;
+        border-radius: 8px !important;
+    }
+
+    .al-barra-icono { font-size: 15px !important; }
+    .al-barra-nivel { font-size: 10px !important; line-height: 1.1; }
+    .al-barra-desc  { font-size: 9.5px !important; line-height: 1.1; }
+    .al-barra-tiempo { display: none !important; }
+    .al-barra-cerrar { width: 18px !important; height: 18px !important; font-size: 11px !important; }
+
+    /* --- TARJETA FLOTANTE MÓVIL (Compacta para no tapar la leyenda inferior) --- */
+    #al-tarjeta {
+        bottom: 12px !important;
+        right: 8px !important;
+        left: auto !important;
+        width: 175px !important;
+        max-width: 48vw !important;
+        padding: 8px 10px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.4) !important;
+    }
+
+    .al-tarjeta-header { gap: 6px !important; margin-bottom: 2px !important; }
+    .al-tarjeta-icono { font-size: 16px !important; }
+    .al-tarjeta-titulo { font-size: 10.5px !important; line-height: 1.1 !important; }
+    .al-tarjeta-sub { font-size: 8px !important; letter-spacing: 0.5px !important; }
+    .al-tarjeta-cuerpo { font-size: 9px !important; line-height: 1.2 !important; margin: 2px 0 0 !important; }
+    .al-tarjeta-btn { padding: 5px !important; font-size: 10px !important; border-radius: 4px !important; margin-top: 4px !important; }
+    .al-tarjeta-cerrar { top: 4px !important; right: 6px !important; font-size: 12px !important; }
 }
 
-#al-tarjeta.al-modo-libre .al-tarjeta-sub {
-    color: var(--al-color, #2ecc71);
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-titulo {
-    color: #e0f5e8;
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-cuerpo {
-    color: #c8f0d4;
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-cuerpo strong {
-    color: var(--al-color, #2ecc71);
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-btn {
-    background: var(--al-color, #2ecc71);
-    color: #0d3520;
-    border-color: var(--al-color-dark, #27ae60);
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-btn:hover {
-    background: var(--al-color-dark, #27ae60);
-    color: #fff;
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-cerrar {
-    color: #8fd9a8;
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-cerrar:hover {
-    background: rgba(46, 204, 113, 0.2);
-    color: #fff;
-}
-
-/* Ocultar botones de cerrar en modo libre (siempre visibles) */
-#al-barra-superior.al-modo-libre .al-barra-cerrar {
-    display: none;
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-cerrar {
-    display: none;
-}
-
-#al-tarjeta.al-modo-libre .al-tarjeta-btn {
-    display: none;
+/* Respetar preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    .al-panel,
+    .al-radar,
+    .al-rayo-svg,
+    .al-icono,
+    .al-mapa-rayo-svg,
+    #al-barra-superior,
+    .al-contador.al-critico {
+        animation: none !important;
+    }
+    #al-overlay.al-visible .al-panel { margin-top: 20px; }
 }
