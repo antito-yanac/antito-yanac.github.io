@@ -295,7 +295,7 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
     }, 700);
 
     // Volar al punto
-    map.flyTo([lat, lng], 12, { duration: 1.4 });
+    map.flyTo([lat, lng], 17, { duration: 1.4 });
 
     return {
         map,
@@ -579,7 +579,7 @@ function irA(lugar) {
 
         [lugar.lat, lugar.lng],
 
-        12,
+        17,
 
         {
 
