@@ -40,7 +40,7 @@ const tipoSelector = document.getElementById("tipo-selector");
 const camposAlerta = document.getElementById("campos-alerta");
 const selectNivel = document.getElementById("nivel");
 const inputDistrito = document.getElementById("distrito");
-const selectIntensidad = document.getElementById("intensidad");
+// const selectIntensidad = document.getElementById("intensidad");
 const inputLat = document.getElementById("lat");
 const inputLng = document.getElementById("lng");
 const inputDuracion = document.getElementById("duracion");
@@ -308,7 +308,6 @@ form.addEventListener("submit", async (e) => {
     if (tipo === "alerta") {
         const nivel = selectNivel.value;
         const distrito = inputDistrito.value.trim();
-        const intensidad = selectIntensidad.value;
         const lat = parseFloat(inputLat.value);
         const lng = parseFloat(inputLng.value);
         const duracionMin = parseInt(inputDuracion.value, 10);
@@ -317,7 +316,6 @@ form.addEventListener("submit", async (e) => {
             tipo: "alerta",
             nivel: nivel,
             distrito: distrito,
-            intensidad: intensidad,
             lat: (!isNaN(lat)) ? lat : null,
             lng: (!isNaN(lng)) ? lng : null,
             duracionMin: (!isNaN(duracionMin) && duracionMin > 0) ? duracionMin : null
