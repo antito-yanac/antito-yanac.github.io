@@ -38,35 +38,35 @@ export const NIVELES_ALERTA = {
         descripcion: "Actividad eléctrica lejana.",
         recomendacion: "Manténgase informado sobre el desarrollo del clima."
     },
-    precaucion: {
-        nombre: "Precaución",
-        color: "#f1c40f",
-        colorDark: "#c9a003",
-        glow: "rgba(241,196,15,0.6)",
-        icono: "🟡",
-        iconoBig: "⚡",
-        descripcion: "Posibles descargas en la zona.",
-        recomendacion: "Esté atento a posibles cambios en el clima."
+    amarilla: {
+    nombre: "Alerta amarilla",
+    color: "#f1c40f",
+    colorDark: "#c9a003",
+    glow: "rgba(241,196,15,0.6)",
+    icono: "🟡",
+    iconoBig: "⚡",
+    descripcion: "Posibles descargas eléctricas en la zona.",
+    recomendacion: "Manténgase atento a la evolución de la actividad eléctrica."
     },
-    alerta: {
-        nombre: "Alerta",
-        color: "#e67e22",
-        colorDark: "#b9530f",
-        glow: "rgba(230,126,34,0.65)",
-        icono: "🟠",
-        iconoBig: "⚡",
-        descripcion: "Evite actividades al aire libre.",
-        recomendacion: "Evite permanecer en zonas abiertas y expuestas."
+    naranja: {
+    nombre: "Alerta naranja",
+    color: "#e67e22",
+    colorDark: "#b9530f",
+    glow: "rgba(230,126,34,0.65)",
+    icono: "🟠",
+    iconoBig: "⚡",
+    descripcion: "Actividad eléctrica cercana.",
+    recomendacion: "Evite actividades al aire libre."
     },
-    emergencia: {
-        nombre: "Emergencia",
-        color: "#e74c3c",
-        colorDark: "#c0392b",
-        glow: "rgba(231,76,60,0.7)",
-        icono: "🔴",
-        iconoBig: "⚡",
-        descripcion: "Refúgiese inmediatamente en un lugar seguro.",
-        recomendacion: "Refúgiese de inmediato. Evite contacto con agua y metales."
+    roja: {
+    nombre: "Alerta roja",
+    color: "#e74c3c",
+    colorDark: "#c0392b",
+    glow: "rgba(231,76,60,0.7)",
+    icono: "🔴",
+    iconoBig: "⚡",
+    descripcion: "Actividad eléctrica muy cercana.",
+    recomendacion: "Refúgiese inmediatamente."
     }
 };
 
@@ -262,21 +262,20 @@ async function obtenerModuloMapa() {
 // ----------------------------------------------------------
 // FUNCIÓN PRINCIPAL: mostrarAlertaCompleta(datos)
 // datos = {
-//   nivel: "vigilancia"|"precaucion"|"alerta"|"emergencia",
+//   nivel: "vigilancia"|"amarilla"|"naranja"|"roja",
 //   titulo: string,
 //   mensaje: string,
 //   distrito: string,
-//   intensidad: string,
 //   lat: number|null,
 //   lng: number|null,
-//   duracionMin: number|null  // minutos para el contador
+//   duracionMin: number|null
 // }
 // ----------------------------------------------------------
 export async function mostrarAlertaCompleta(datos = {}) {
     try {
         asegurarEstructuraDOM();
 
-        const nivelKey = NIVELES_ALERTA[datos.nivel] ? datos.nivel : "emergencia";
+        const nivelKey = NIVELES_ALERTA[datos.nivel] ? datos.nivel : "roja";
         const nivel = NIVELES_ALERTA[nivelKey];
 
         // Detener cualquier alerta previa
@@ -343,7 +342,7 @@ export async function mostrarAlertaCompleta(datos = {}) {
         document.getElementById("al-tarjeta-titulo").textContent = datos.titulo || "Tormenta eléctrica";
         const cuerpo = [];
         if (datos.distrito) cuerpo.push(`<strong>📍 Distrito:</strong> ${datos.distrito}`);
-        if (datos.intensidad) cuerpo.push(`<strong>📊 Intensidad:</strong> ${datos.intensidad}`);
+        // if (datos.intensidad) cuerpo.push(`<strong>📊 Intensidad:</strong> ${datos.intensidad}`);
         cuerpo.push(`<strong>⚡ Nivel:</strong> ${nivel.nombre}`);
         document.getElementById("al-tarjeta-cuerpo").innerHTML = cuerpo.join("<br>");
         // Mostrar con un pequeño retardo para que entre después del banner
