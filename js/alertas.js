@@ -502,7 +502,7 @@ function iniciarContadorSincronizado(timestampInicio, duracionMs) {
             setTimeout(() => {
                 // if (typeof mostrarAlertaLibre === "function") {
                     mostrarAlertaLibre();
-                }
+                // }
             }, 1500);
             return;
         }
