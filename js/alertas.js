@@ -500,7 +500,7 @@ function iniciarContadorSincronizado(timestampInicio, duracionMs) {
             detenerSonidoAlerta();
             // Pequeño retardo para que el usuario vea el 00:00:00
             setTimeout(() => {
-                if (typeof mostrarAlertaLibre === "function") {
+                // if (typeof mostrarAlertaLibre === "function") {
                     mostrarAlertaLibre();
                 }
             }, 1500);
