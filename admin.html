@@ -121,9 +121,9 @@
             <div class="form-group">
                 <label for="nivel">🎯 Nivel de alerta</label>
                 <select id="nivel" name="nivel">
-                    <option value="precaucion">🟡 Precaución — Posibles descargas</option>
-                    <option value="alerta" selected>🟠 Alerta — Evite actividades al aire libre</option>
-                    <option value="emergencia">🔴 Emergencia — Refúgiese inmediatamente</option>
+                    <option value="amarilla">🟡 Alerta amarilla</option>
+                    <option value="naranja" selected>🟠 Alerta naranja</option>
+                    <option value="roja">🔴 Alerta roja</option>
                 </select>
                 <div class="nivel-preview" id="nivel-preview"></div>
             </div>
@@ -137,17 +137,6 @@
                     <option value="Zona 3 - Tucush">Zona 3 - Tucush</option>
                 </select>
                 <small style="opacity:0.7; font-size:12px;">Al seleccionar una zona, se pintará el polígono en el mapa con el color de la alerta.</small>
-            </div>
-
-            <!-- Intensidad -->
-            <div class="form-group">
-                <label for="intensidad">📊 Intensidad</label>
-                <select id="intensidad" name="intensidad">
-                    <option value="Baja">Baja</option>
-                    <option value="Moderada" selected>Moderada</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Muy alta">Muy alta</option>
-                </select>
             </div>
 
             <!-- Coordenadas (opcional, para iluminar el mapa) -->
