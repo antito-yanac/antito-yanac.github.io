@@ -53,16 +53,16 @@ export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
     };
     const color = colores[nivelKey] || colores.emergencia;
 
-    // --- Círculo rojo parpadeante ---
-    const circulo = L.circle([lat, lng], {
-        radius: 1800,            // metros
-        color: color,
-        weight: 3,
-        opacity: 0.9,
-        fillColor: color,
-        fillOpacity: 0.2,
-        dashArray: "6 6"
-    }).addTo(map);
+    // --- Círculo rojo parpadeante --- lo elimine
+   // const circulo = L.circle([lat, lng], {
+   //     radius: 1800,            // metros
+   //     color: color,
+   //     weight: 3,
+   //     opacity: 0.9,
+   //     fillColor: color,
+   //     fillOpacity: 0.2,
+   //     dashArray: "6 6"
+   // }).addTo(map);
 
     // --- Núcleo (punto central sólido) ---
     const nucleo = L.circleMarker([lat, lng], {
