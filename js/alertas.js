@@ -501,12 +501,17 @@ function iniciarContadorSincronizado(timestampInicio, duracionMs) {
             // Cuando el contador llega a cero, la alerta expira:
             // se restaura el estado "Libre de alertas" (verde persistente)
             detenerSonidoAlerta();
+            // =====================================================
+            // FIN REAL DE LA ALERTA
+            // Limpiar absolutamente todos los elementos asociados
+            // =====================================================
+            cerrarAlertaTotal();
             // Pequeño retardo para que el usuario vea el 00:00:00
             setTimeout(() => {
                 // if (typeof mostrarAlertaLibre === "function") {
                     mostrarAlertaLibre();
                 // }
-            }, 1500);
+            }, 300);
             return;
         }
         el.textContent = formatear(restante);
