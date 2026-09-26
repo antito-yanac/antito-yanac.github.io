@@ -373,12 +373,15 @@ export async function mostrarAlertaCompleta(datos = {}) {
         // Si hay coordenadas exactas, iluminar ese punto.
         // Si hay un distrito/zona, además buscar el punto real en el
         // GeoJSON (lugares.json) y pintar el efecto del rayo sobre él.
+        // ----- 7. MAPA ILUMINADO -----
+        // La coordenada enviada por el panel administrativo
+        // es la ÚNICA posición válida para el efecto de alerta.
         if (datos.lat != null && datos.lng != null) {
             iluminarMapa(datos.lat, datos.lng, nivelKey);
         }
-        if (datos.distrito) {
-            iluminarZonaEnMapa(datos.distrito, nivelKey);
-        }
+        //if (datos.distrito) {
+        //    iluminarZonaEnMapa(datos.distrito, nivelKey);
+        //}
 
         // ----- 7b. PINTAR POLÍGONO DE ZONA -----
         // Si se especifica un distrito/zona, pintar el polígono con el color de la alerta
