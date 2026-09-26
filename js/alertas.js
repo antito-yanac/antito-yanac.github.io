@@ -283,7 +283,11 @@ export async function mostrarAlertaCompleta(datos = {}) {
         limpiarMapaAlerta();
 
         alertaActiva = true;
-        tiempoInicioAlerta = Date.now();
+        //tiempoInicioAlerta = Date.now();   se agrego estas cuatro lineas
+        tiempoInicioAlerta =
+        (typeof datos.timestampInicio === "number" && datos.timestampInicio > 0)
+        ? datos.timestampInicio
+        : Date.now();
 
         // Aplicar variables CSS del nivel a los contenedores
         const vars = [
@@ -496,6 +500,7 @@ function iniciarContadorSincronizado(timestampInicio, duracionMs) {
         if (restante <= 0) {
             el.textContent = "00:00:00";
             el.classList.remove("al-critico");
+            //detener este contador
             clearInterval(intervalContador);
             intervalContador = null;
             // Cuando el contador llega a cero, la alerta expira:
@@ -505,13 +510,14 @@ function iniciarContadorSincronizado(timestampInicio, duracionMs) {
             // FIN REAL DE LA ALERTA
             // Limpiar absolutamente todos los elementos asociados
             // =====================================================
-            cerrarAlertaTotal();
+            //cerrarAlertaTotal();
             // Pequeño retardo para que el usuario vea el 00:00:00
-            setTimeout(() => {
+            //setTimeout(() => {
                 // if (typeof mostrarAlertaLibre === "function") {
-                    mostrarAlertaLibre();
+             //       mostrarAlertaLibre();
                 // }
-            }, 300);
+            //}, 300);
+            mostrarAlertaLibre();
             return;
         }
         el.textContent = formatear(restante);
@@ -619,13 +625,25 @@ function limpiarMapaAlerta() {
     try {
         if (intervalRayoMapa) { clearInterval(intervalRayoMapa); intervalRayoMapa = null; }
         if (capaMapaAlerta) {
-            if (capaMapaAlerta.circulo && capaMapaAlerta.map) capaMapaAlerta.map.removeLayer(capaMapaAlerta.circulo);
-            if (capaMapaAlerta.rayoMarker && capaMapaAlerta.map) capaMapaAlerta.map.removeLayer(capaMapaAlerta.rayoMarker);
+            if (typeof capaMapaAlerta.detener === "function") {
+                capaMapaAlerta.detener();
+            }
+            if (capaMapaAlerta.circulo && capaMapaAlerta.map) {
+                capaMapaAlerta.map.removeLayer(capaMapaAlerta.circulo);
+               } 
+            if (capaMapaAlerta.rayoMarker && capaMapaAlerta.map) {
+                capaMapaAlerta.map.removeLayer(capaMapaAlerta.rayoMarker);
+               } 
             // Si la capa es un L.LayerGroup
-            if (capaMapaAlerta.remove && capaMapaAlerta.map) capaMapaAlerta.map.removeLayer(capaMapaAlerta);
+            if (capaMapaAlerta.remove && capaMapaAlerta.map) {
+                capaMapaAlerta.map.removeLayer(capaMapaAlerta);
+              }  
             capaMapaAlerta = null;
         }
-    } catch (e) { /* no crítico */ }
+    } catch (e) { console.warn(
+            "alertas.js: error limpiando mapa de alerta",
+            e
+        ); }
 }
 
 // ----------------------------------------------------------
