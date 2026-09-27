@@ -131,8 +131,9 @@ let intervalSirena = null;
 let intervalTimestamp = null;
 let intervalRayoMapa = null;
 let tiempoInicioAlerta = null;
-let capaMapaAlerta = null;   // capa Leaflet del círculo + rayo
+let capaMapaAlerta = null;   // capa Leaflet con rayo + núcleo + pulso
 let mapaRef = null;          // referencia al mapa Leaflet
+let idAlertaMapa = 0;        // identifica la alerta de mapa vigente
 
 // ----------------------------------------------------------
 // DURACIÓN DEL TIMER DE ALERTA (15 minutos por defecto)
@@ -282,12 +283,17 @@ export async function mostrarAlertaCompleta(datos = {}) {
         detenerIntervalos();
         limpiarMapaAlerta();
 
+        // Invalidar cualquier operación asíncrona de la alerta anterior
+        idAlertaMapa++;
+        const miIdAlerta = idAlertaMapa;
+
         alertaActiva = true;
-        //tiempoInicioAlerta = Date.now();   se agrego estas cuatro lineas
+
+        // Usar el mismo timestamp de Firestore que utiliza el contador.
         tiempoInicioAlerta =
-        (typeof datos.timestampInicio === "number" && datos.timestampInicio > 0)
-        ? datos.timestampInicio
-        : Date.now();
+            (typeof datos.timestampInicio === "number" && datos.timestampInicio > 0)
+                ? datos.timestampInicio
+                : Date.now();
 
         // Aplicar variables CSS del nivel a los contenedores
         const vars = [
@@ -374,23 +380,16 @@ export async function mostrarAlertaCompleta(datos = {}) {
         iniciarContadorSincronizado(tsInicio, duracionMs);
 
         // ----- 7. MAPA ILUMINADO -----
-        // Si hay coordenadas exactas, iluminar ese punto.
-        // Si hay un distrito/zona, además buscar el punto real en el
-        // GeoJSON (lugares.json) y pintar el efecto del rayo sobre él.
-        // ----- 7. MAPA ILUMINADO -----
-        // La coordenada enviada por el panel administrativo
-        // es la ÚNICA posición válida para el efecto de alerta.
+        // Solo se crea UNA capa de alerta: rayo + núcleo + pulso.
+        // Esto evita duplicar los efectos cuando también existe distrito.
         if (datos.lat != null && datos.lng != null) {
-            iluminarMapa(datos.lat, datos.lng, nivelKey);
+            iluminarMapa(datos.lat, datos.lng, nivelKey, miIdAlerta);
         }
-        //if (datos.distrito) {
-        //    iluminarZonaEnMapa(datos.distrito, nivelKey);
-        //}
 
         // ----- 7b. PINTAR POLÍGONO DE ZONA -----
         // Si se especifica un distrito/zona, pintar el polígono con el color de la alerta
         if (datos.distrito) {
-            pintarZonaEnMapa(datos.distrito, nivel.color);
+            pintarZonaEnMapa(datos.distrito, nivel.color, miIdAlerta);
         }
 
         // ----- SONIDO EN LOOP (30 segundos) -----
@@ -500,23 +499,19 @@ function iniciarContadorSincronizado(timestampInicio, duracionMs) {
         if (restante <= 0) {
             el.textContent = "00:00:00";
             el.classList.remove("al-critico");
-            //detener este contador
+
             clearInterval(intervalContador);
             intervalContador = null;
-            // Cuando el contador llega a cero, la alerta expira:
-            // se restaura el estado "Libre de alertas" (verde persistente)
+
+            // La alerta expira AHORA. Invalidar cualquier operación
+            // asíncrona que todavía pudiera crear efectos en el mapa.
+            alertaActiva = false;
+            idAlertaMapa++;
+
             detenerSonidoAlerta();
-            // =====================================================
-            // FIN REAL DE LA ALERTA
-            // Limpiar absolutamente todos los elementos asociados
-            // =====================================================
-            //cerrarAlertaTotal();
-            // Pequeño retardo para que el usuario vea el 00:00:00
-            //setTimeout(() => {
-                // if (typeof mostrarAlertaLibre === "function") {
-             //       mostrarAlertaLibre();
-                // }
-            //}, 300);
+            limpiarMapaAlerta();
+
+            // Restaurar inmediatamente el estado normal.
             mostrarAlertaLibre();
             return;
         }
@@ -557,65 +552,109 @@ function iniciarTimestampBarra() {
 // ----------------------------------------------------------
 // 7. MAPA ILUMINADO (círculo rojo parpadeante + rayo)
 // ----------------------------------------------------------
-async function iluminarMapa(lat, lng, nivelKey) {
+async function iluminarMapa(lat, lng, nivelKey, miIdAlerta) {
     try {
         const mod = await obtenerModuloMapa();
-        if (!mod || typeof mod.iluminarDistrito !== "function") {
-            // map.js no tiene la función (versión anterior) → usar Leaflet global
-            iluminarMapaLegacy(lat, lng, nivelKey);
+
+        // La alerta pudo expirar mientras esperábamos el módulo.
+        if (!alertaActiva || miIdAlerta !== idAlertaMapa) {
             return;
         }
-        capaMapaAlerta = await mod.iluminarDistrito(lat, lng, nivelKey);
+
+        if (!mod || typeof mod.iluminarDistrito !== "function") {
+            // Compatibilidad con versiones antiguas.
+            iluminarMapaLegacy(lat, lng, nivelKey);
+
+            if (!alertaActiva || miIdAlerta !== idAlertaMapa) {
+                limpiarMapaAlerta();
+            }
+            return;
+        }
+
+        const capa = await mod.iluminarDistrito(lat, lng, nivelKey);
+
+        // Si la alerta terminó durante el await, destruir inmediatamente
+        // la capa recién creada en lugar de dejarla visible.
+        if (!alertaActiva || miIdAlerta !== idAlertaMapa) {
+            if (capa && typeof capa.detener === "function") {
+                capa.detener();
+            }
+            return;
+        }
+
+        capaMapaAlerta = capa;
+
     } catch (e) {
         console.warn("alertas.js: error iluminando mapa", e);
     }
 }
 
-// Respaldo: usar L (Leaflet) global directamente
+// Respaldo para una versión antigua de map.js.
+// La versión actual de map.js es la que se utiliza normalmente.
 function iluminarMapaLegacy(lat, lng, nivelKey) {
     try {
         if (typeof L === "undefined") return;
-        const nivel = NIVELES_ALERTA[nivelKey] || NIVELES_ALERTA.emergencia;
-        // Buscar el mapa Leaflet global (map.js lo guarda en variable local,
-        // pero el div #map tiene la instancia accesible vía _leaflet_id)
+
+        const nivel = NIVELES_ALERTA[nivelKey] || NIVELES_ALERTA.roja;
         const mapEl = document.getElementById("map");
-        if (!mapEl || !mapEl._leaflet_id) return;
-        // Recuperar la instancia del mapa
-        const mapInstance = Object.values(L._maps || {}).find(m => m.getContainer() === mapEl)
-                         || (window.__leafMap || null);
+        if (!mapEl) return;
+
+        const mapInstance = Object.values(L._maps || {})
+            .find(m => m.getContainer() === mapEl)
+            || window.__leafMap
+            || null;
+
         if (!mapInstance) return;
         mapaRef = mapInstance;
 
         const color = nivel.color;
-        // Círculo rojo parpadeante
-        const circulo = L.circle([lat, lng], {
-            radius: 1500,
-            color: color,
-            weight: 3,
+
+        const nucleo = L.circleMarker([lat, lng], {
+            radius: 10,
+            color: "#fff",
+            weight: 2,
             fillColor: color,
-            fillOpacity: 0.2
+            fillOpacity: 0.95
         }).addTo(mapInstance);
 
-        // Rayo cayendo (divIcon animado)
         const rayoIcon = L.divIcon({
             className: "al-mapa-rayo",
             html: SVG_RAYO_MAPA,
-            iconSize: [46, 46],
-            iconAnchor: [23, 23]
+            iconSize: [50, 50],
+            iconAnchor: [25, 25]
         });
-        const rayoMarker = L.marker([lat, lng], { icon: rayoIcon }).addTo(mapInstance);
+        const rayoMarker = L.marker([lat, lng], {
+            icon: rayoIcon,
+            zIndexOffset: 2000
+        }).addTo(mapInstance);
 
-        capaMapaAlerta = { circulo, rayoMarker, map: mapInstance };
+        const pulsoIcon = L.divIcon({
+            className: "",
+            html: `<div style="width:40px;height:40px;border-radius:50%;
+                     border:3px solid ${color};position:relative;
+                     animation:al-radar-pulso 2s ease-out infinite;"></div>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+        const pulsoMarker = L.marker([lat, lng], {
+            icon: pulsoIcon,
+            zIndexOffset: 1900
+        }).addTo(mapInstance);
 
-        // Parpadeo del círculo
-        let op = 0.2;
-        intervalRayoMapa = setInterval(() => {
-            op = op === 0.2 ? 0.5 : 0.2;
-            circulo.setStyle({ fillOpacity: op });
-        }, 800);
+        capaMapaAlerta = {
+            map: mapInstance,
+            nucleo,
+            rayoMarker,
+            pulsoMarker,
+            detener() {
+                try { mapInstance.removeLayer(nucleo); } catch (e) {}
+                try { mapInstance.removeLayer(rayoMarker); } catch (e) {}
+                try { mapInstance.removeLayer(pulsoMarker); } catch (e) {}
+            }
+        };
 
-        // Volar al punto
-        mapInstance.flyTo([lat, lng], 13, { duration: 1.2 });
+        mapInstance.flyTo([lat, lng], 12, { duration: 1.4 });
+
     } catch (e) {
         console.warn("alertas.js: iluminarMapaLegacy falló", e);
     }
@@ -623,37 +662,53 @@ function iluminarMapaLegacy(lat, lng, nivelKey) {
 
 function limpiarMapaAlerta() {
     try {
-        if (intervalRayoMapa) { clearInterval(intervalRayoMapa); intervalRayoMapa = null; }
-        if (capaMapaAlerta) {
-            if (typeof capaMapaAlerta.detener === "function") {
-                capaMapaAlerta.detener();
-            }
-            if (capaMapaAlerta.circulo && capaMapaAlerta.map) {
-                capaMapaAlerta.map.removeLayer(capaMapaAlerta.circulo);
-               } 
-            if (capaMapaAlerta.rayoMarker && capaMapaAlerta.map) {
-                capaMapaAlerta.map.removeLayer(capaMapaAlerta.rayoMarker);
-               } 
-            // Si la capa es un L.LayerGroup
-            if (capaMapaAlerta.remove && capaMapaAlerta.map) {
-                capaMapaAlerta.map.removeLayer(capaMapaAlerta);
-              }  
-            capaMapaAlerta = null;
+        if (intervalRayoMapa) {
+            clearInterval(intervalRayoMapa);
+            intervalRayoMapa = null;
         }
-    } catch (e) { console.warn(
-            "alertas.js: error limpiando mapa de alerta",
-            e
-        ); }
+
+        if (!capaMapaAlerta) return;
+
+        const capa = capaMapaAlerta;
+        capaMapaAlerta = null;
+
+        // La implementación actual de map.js elimina los tres elementos.
+        if (typeof capa.detener === "function") {
+            capa.detener();
+            return;
+        }
+
+        // Compatibilidad con objetos de versiones anteriores.
+        if (capa.map) {
+            ["circulo", "circuloMedio", "nucleo", "rayoMarker", "pulsoMarker"]
+                .forEach(nombre => {
+                    if (capa[nombre]) {
+                        try { capa.map.removeLayer(capa[nombre]); } catch (e) {}
+                    }
+                });
+        }
+
+    } catch (e) {
+        capaMapaAlerta = null;
+        console.warn("alertas.js: error limpiando mapa de alerta", e);
+    }
 }
 
 // ----------------------------------------------------------
 // PINTAR POLÍGONO DE ZONA EN EL MAPA
 // ----------------------------------------------------------
-async function pintarZonaEnMapa(nombreZona, color) {
+async function pintarZonaEnMapa(nombreZona, color, miIdAlerta) {
     try {
         const mod = await obtenerModuloMapa();
-        if (mod && typeof mod.pintarPoligonoZona === "function") {
-            await mod.pintarPoligonoZona(nombreZona, color);
+        if (!mod || typeof mod.pintarPoligonoZona !== "function") return;
+
+        await mod.pintarPoligonoZona(nombreZona, color);
+
+        // No permitir que un polígono creado tarde sobreviva a la alerta.
+        if (!alertaActiva || miIdAlerta !== idAlertaMapa) {
+            if (typeof mod.limpiarPoligonosZona === "function") {
+                mod.limpiarPoligonosZona();
+            }
         }
     } catch (e) {
         console.warn("alertas.js: error pintando zona", e);
@@ -750,6 +805,7 @@ export function mostrarAlertaLibre() {
     try {
         asegurarEstructuraDOM();
         detenerIntervalos();
+        idAlertaMapa++;
         limpiarMapaAlerta();
         detenerSonidoAlerta();
 
@@ -942,6 +998,7 @@ export function cerrarAlertaTotal() {
     ocultarTarjeta();
     cerrarModalSeguridad();
     detenerIntervalos();
+    idAlertaMapa++;
     detenerSonidoAlerta();
     limpiarMapaAlerta();
     // Limpiar polígonos de zona

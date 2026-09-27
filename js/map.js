@@ -48,23 +48,22 @@ export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
     const colores = {
         vigilancia: "#2ecc71",
         precaucion: "#f1c40f",
+        amarilla:   "#f1c40f",
         alerta:     "#e67e22",
-        emergencia: "#e74c3c"
+        naranja:    "#e67e22",
+        emergencia: "#e74c3c",
+        roja:       "#e74c3c"
     };
     const color = colores[nivelKey] || colores.emergencia;
 
-    // --- Círculo rojo parpadeante --- lo elimine
-   // const circulo = L.circle([lat, lng], {
-   //     radius: 1800,            // metros
-   //     color: color,
-   //     weight: 3,
-   //     opacity: 0.9,
-   //     fillColor: color,
-   //     fillOpacity: 0.2,
-   //     dashArray: "6 6"
-   // }).addTo(map);
+    // ==================================================
+    // SOLO TRES ELEMENTOS DURANTE UNA ALERTA:
+    // 1. punto central
+    // 2. rayo
+    // 3. anillo de pulso
+    // No se crea ningún círculo geográfico grande.
+    // ==================================================
 
-    // --- Núcleo (punto central sólido) ---
     const nucleo = L.circleMarker([lat, lng], {
         radius: 10,
         color: "#fff",
@@ -73,22 +72,21 @@ export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
         fillOpacity: 0.95
     }).addTo(map);
 
-    // --- Rayo SVG cayendo sobre el punto ---
     const rayoIcon = L.divIcon({
         className: "al-mapa-rayo",
-        html: `<svg class="al-mapa-rayo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        html: `<svg class="al-mapa-rayo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                  <polygon points="58,5 30,52 48,52 38,95 72,42 52,42 62,5"
                           fill="#ffeb3b" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
                </svg>`,
         iconSize: [50, 50],
         iconAnchor: [25, 25]
     });
+
     const rayoMarker = L.marker([lat, lng], {
         icon: rayoIcon,
         zIndexOffset: 2000
     }).addTo(map);
 
-    // --- Anillo de pulso expansivo (radar) ---
     const pulsoIcon = L.divIcon({
         className: "",
         html: `<div style="width:40px;height:40px;border-radius:50%;
@@ -97,38 +95,49 @@ export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
         iconSize: [40, 40],
         iconAnchor: [20, 20]
     });
-    const pulsoMarker = L.marker([lat, lng], { icon: pulsoIcon, zIndexOffset: 1900 }).addTo(map);
 
-    // --- Popup informativo en el punto ---
-    circulo.bindPopup(
+    const pulsoMarker = L.marker([lat, lng], {
+        icon: pulsoIcon,
+        zIndexOffset: 1900
+    }).addTo(map);
+
+    // Popup sobre el punto central.
+    nucleo.bindPopup(
         `<b>⚡ Zona de alerta</b><br>` +
         `Actividad eléctrica detectada<br>` +
         `Lat: ${lat.toFixed(5)}<br>Lng: ${lng.toFixed(5)}`
     );
 
-    // --- Parpadeo del círculo (opacidad) ---
-    let parpadeoOn = true;
+    // Parpadeo coordinado del núcleo y del pulso.
+    let visible = true;
     const intervalParpadeo = setInterval(() => {
-        parpadeoOn = !parpadeoOn;
-        circulo.setStyle({ fillOpacity: parpadeoOn ? 0.35 : 0.12, opacity: parpadeoOn ? 0.9 : 0.4 });
+        visible = !visible;
+
+        nucleo.setStyle({
+            fillOpacity: visible ? 0.95 : 0.55
+        });
+
+        const elementoPulso = pulsoMarker.getElement?.();
+        if (elementoPulso) {
+            elementoPulso.style.opacity = visible ? "1" : "0.35";
+        }
     }, 700);
 
-    // --- Volar al punto ---
     map.flyTo([lat, lng], 12, { duration: 1.4 });
 
     return {
         map,
-        circulo,
         nucleo,
         rayoMarker,
         pulsoMarker,
         intervalParpadeo,
+
         detener() {
             clearInterval(intervalParpadeo);
-            try { map.removeLayer(circulo); } catch(e){}
-            try { map.removeLayer(nucleo); } catch(e){}
-            try { map.removeLayer(rayoMarker); } catch(e){}
-            try { map.removeLayer(pulsoMarker); } catch(e){}
+
+            try { map.removeLayer(nucleo); } catch (e) {}
+            try { map.removeLayer(rayoMarker); } catch (e) {}
+            try { map.removeLayer(pulsoMarker); } catch (e) {}
         }
     };
 }
@@ -151,66 +160,56 @@ export function iluminarDistrito(lat, lng, nivelKey = "emergencia") {
 export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") {
     if (!map) return null;
 
-    const colores = {
-        vigilancia: "#2ecc71",
-        precaucion: "#f1c40f",
-        alerta:     "#e67e22",
-        emergencia: "#e74c3c"
-    };
-    const color = colores[nivelKey] || colores.emergencia;
-
-    // --- 1. Buscar el punto en el GeoJSON cargado ---
     let puntoEncontrado = null;
-
-    // Palabras clave de búsqueda derivadas del nombre de la zona
-    const zonaLower = (nombreZona || "").toLowerCase();
-    // Extraer el nombreCorto: "Zona 1 - Campamentos" -> "Campamentos"
-    const partes = nombreZona.split("-");
+    const zonaTexto = String(nombreZona || "");
+    const zonaLower = zonaTexto.toLowerCase();
+    const partes = zonaTexto.split("-");
     const nombreBusqueda = partes.length > 1
         ? partes.slice(1).join("-").trim().toLowerCase()
         : zonaLower;
 
+    // Buscar primero el punto real del GeoJSON.
     if (geoLayer) {
         geoLayer.eachLayer(layer => {
             if (puntoEncontrado) return;
+
             const f = layer.feature;
-            if (!f) return;
-            // Solo puntos (Point)
-            if (f.geometry && f.geometry.type === "Point") {
-                const nombre = (f.properties?.Name || "").toLowerCase();
-                if (nombre.includes(nombreBusqueda) || nombreBusqueda.includes(nombre)) {
-                    const coords = f.geometry.coordinates; // [lng, lat, alt?]
-                    puntoEncontrado = {
-                        lat: coords[1],
-                        lng: coords[0],
-                        nombre: f.properties?.Name || nombreZona,
-                        layer: layer
-                    };
-                }
+            if (!f || !f.geometry || f.geometry.type !== "Point") return;
+
+            const nombre = (f.properties?.Name || "").toLowerCase();
+            if (nombre.includes(nombreBusqueda) || nombreBusqueda.includes(nombre)) {
+                const coords = f.geometry.coordinates;
+                puntoEncontrado = {
+                    lat: coords[1],
+                    lng: coords[0],
+                    nombre: f.properties?.Name || zonaTexto
+                };
             }
         });
     }
 
-    // --- 2. Si no se encuentra en GeoJSON, usar coordenadas de zonas.json ---
+    // Fallback: zonas.json.
     if (!puntoEncontrado) {
         try {
             const data = await cargarZonas();
             if (data && data.zonas) {
                 const zona = data.zonas.find(z =>
-                    z.nombre === nombreZona ||
-                    z.nombre.includes(nombreZona) ||
-                    nombreZona.includes(z.nombreCorto)
+                    z.nombre === zonaTexto ||
+                    z.nombre.includes(zonaTexto) ||
+                    zonaTexto.includes(z.nombreCorto)
                 );
-                if (zona) {
+
+                if (zona && typeof zona.lat === "number" && typeof zona.lng === "number") {
                     puntoEncontrado = {
                         lat: zona.lat,
                         lng: zona.lng,
-                        nombre: zona.nombre,
-                        layer: null
+                        nombre: zona.nombre
                     };
                 }
             }
-        } catch (e) { /* fallback ya manejado */ }
+        } catch (e) {
+            console.warn("map.js: error buscando coordenadas de zona", e);
+        }
     }
 
     if (!puntoEncontrado) {
@@ -218,103 +217,28 @@ export async function iluminarDistritoZona(nombreZona, nivelKey = "emergencia") 
         return null;
     }
 
-    const lat = puntoEncontrado.lat;
-    const lng = puntoEncontrado.lng;
-
-    // --- 3. Pintar el efecto sobre el punto encontrado ---
-    // Círculo concéntrico grande (radio dinámico parpadeante)
-    const circulo = L.circle([lat, lng], {
-        radius: 1800,
-        color: color,
-        weight: 3,
-        opacity: 0.9,
-        fillColor: color,
-        fillOpacity: 0.2,
-        dashArray: "6 6"
-    }).addTo(map);
-
-    // Círculo intermedio concéntrico
-    const circuloMedio = L.circle([lat, lng], {
-        radius: 900,
-        color: color,
-        weight: 2,
-        opacity: 0.7,
-        fillColor: color,
-        fillOpacity: 0.15
-    }).addTo(map);
-
-    // Núcleo (punto central sólido)
-    const nucleo = L.circleMarker([lat, lng], {
-        radius: 10,
-        color: "#fff",
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 0.95
-    }).addTo(map);
-
-    // Rayo SVG cayendo sobre el punto
-    const rayoIcon = L.divIcon({
-        className: "al-mapa-rayo",
-        html: `<svg class="al-mapa-rayo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                 <polygon points="58,5 30,52 48,52 38,95 72,42 52,42 62,5"
-                          fill="#ffeb3b" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
-               </svg>`,
-        iconSize: [50, 50],
-        iconAnchor: [25, 25]
-    });
-    const rayoMarker = L.marker([lat, lng], {
-        icon: rayoIcon,
-        zIndexOffset: 2000
-    }).addTo(map);
-
-    // Anillo de pulso expansivo (radar)
-    const pulsoIcon = L.divIcon({
-        className: "",
-        html: `<div style="width:40px;height:40px;border-radius:50%;
-                 border:3px solid ${color};position:relative;
-                 animation:al-radar-pulso 2s ease-out infinite;"></div>`,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-    });
-    const pulsoMarker = L.marker([lat, lng], { icon: pulsoIcon, zIndexOffset: 1900 }).addTo(map);
-
-    // Popup informativo en el punto
-    circulo.bindPopup(
-        `<b>⚡ Zona de alerta</b><br>` +
-        `Actividad eléctrica detectada<br>` +
-        `<b>${puntoEncontrado.nombre}</b><br>` +
-        `Lat: ${lat.toFixed(5)}<br>Lng: ${lng.toFixed(5)}`
+    // Reutilizar la MISMA implementación de los tres elementos.
+    const capa = iluminarDistrito(
+        puntoEncontrado.lat,
+        puntoEncontrado.lng,
+        nivelKey
     );
 
-    // Parpadeo del círculo (opacidad) — círculos concéntricos dinámicos
-    let parpadeoOn = true;
-    const intervalParpadeo = setInterval(() => {
-        parpadeoOn = !parpadeoOn;
-        circulo.setStyle({ fillOpacity: parpadeoOn ? 0.35 : 0.12, opacity: parpadeoOn ? 0.9 : 0.4 });
-        circuloMedio.setStyle({ fillOpacity: parpadeoOn ? 0.25 : 0.08, opacity: parpadeoOn ? 0.7 : 0.3 });
-    }, 700);
+    if (capa && capa.nucleo) {
+        capa.nucleo.bindPopup(
+            `<b>⚡ Zona de alerta</b><br>` +
+            `Actividad eléctrica detectada<br>` +
+            `<b>${puntoEncontrado.nombre}</b><br>` +
+            `Lat: ${puntoEncontrado.lat.toFixed(5)}<br>` +
+            `Lng: ${puntoEncontrado.lng.toFixed(5)}`
+        );
+    }
 
-    // Volar al punto
-    map.flyTo([lat, lng], 12, { duration: 1.4 });
+    if (capa) {
+        capa.puntoEncontrado = puntoEncontrado;
+    }
 
-    return {
-        map,
-        circulo,
-        circuloMedio,
-        nucleo,
-        rayoMarker,
-        pulsoMarker,
-        puntoEncontrado,
-        intervalParpadeo,
-        detener() {
-            clearInterval(intervalParpadeo);
-            try { map.removeLayer(circulo); } catch(e){}
-            try { map.removeLayer(circuloMedio); } catch(e){}
-            try { map.removeLayer(nucleo); } catch(e){}
-            try { map.removeLayer(rayoMarker); } catch(e){}
-            try { map.removeLayer(pulsoMarker); } catch(e){}
-        }
-    };
+    return capa;
 }
 
 export function crearMapa(idDiv) {
